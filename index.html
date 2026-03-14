@@ -1,11 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>AURUM · AI‑assisted dispute resolution</title>
-  <!-- PWA manifest will be injected -->
   <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232A2A2A'/%3E%3Cpath d='M30 35 L70 35 L70 65 L30 65 Z' fill='none' stroke='%23E0E0E0' stroke-width='4'/%3E%3Ctext x='32' y='68' font-size='44' fill='%23E0E0E0' font-family='Arial'%3E⚖️%3C/text%3E%3C/svg%3E">
   <style>
     /* ---------- RESET & PREMIUM VARIABLES ---------- */
@@ -50,7 +48,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ---------- UTILITY CLASSES ---------- */
     .hidden { display: none !important; }
 
     .btn {
@@ -103,7 +100,6 @@
       background: #059669;
     }
 
-    /* ---------- MAIN LAYOUT ---------- */
     .app {
       max-width: 1600px;
       margin: 0 auto;
@@ -114,7 +110,6 @@
       flex-direction: column;
     }
 
-    /* Header – clean, minimal */
     header {
       display: flex;
       justify-content: space-between;
@@ -175,7 +170,6 @@
 
     .dot.connected { background: var(--success); }
 
-    /* Main grid – refined spacing */
     .main-grid {
       display: grid;
       grid-template-columns: 1fr 360px;
@@ -188,7 +182,6 @@
       .main-grid { grid-template-columns: 1fr; }
     }
 
-    /* Chat panel – elegant card */
     .chat-panel {
       background: var(--surface);
       border-radius: var(--radius-lg);
@@ -199,7 +192,6 @@
       height: 70vh;
       min-height: 550px;
       box-shadow: var(--shadow-lg);
-      backdrop-filter: blur(2px);
     }
 
     .chat-header {
@@ -270,7 +262,14 @@
       font-style: italic;
       max-width: 90%;
       border: 1px dashed var(--border);
-      backdrop-filter: blur(4px);
+    }
+
+    .message.attachment {
+      align-self: flex-start;
+      background: var(--surface-secondary);
+      border-left: 4px solid var(--accent);
+      font-family: monospace;
+      font-size: 0.85rem;
     }
 
     .chat-input-area {
@@ -279,10 +278,11 @@
       background: var(--surface);
       border-top: 1px solid var(--border);
       gap: 0.8rem;
+      flex-wrap: wrap;
     }
 
     .chat-input-area input {
-      flex: 1;
+      flex: 1 1 200px;
       background: var(--surface-secondary);
       border: 1px solid var(--border);
       border-radius: 48px;
@@ -314,7 +314,23 @@
       background: #1d4ed8;
     }
 
-    /* Right panel cards */
+    .attach-btn {
+      background: var(--surface-secondary);
+      border: 1px solid var(--border);
+      border-radius: 48px;
+      padding: 0.9rem 1.4rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .attach-btn:hover {
+      background: #e5e9f0;
+    }
+
     .right-panel {
       display: flex;
       flex-direction: column;
@@ -410,6 +426,21 @@
       overflow-y: auto;
     }
 
+    .attachment-list {
+      margin-top: 1rem;
+    }
+
+    .attachment-item {
+      background: var(--surface-secondary);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     footer {
       margin-top: 3rem;
       text-align: center;
@@ -430,11 +461,6 @@
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Responsive touchups */
-    @media (max-width: 600px) {
-      .message { max-width: 85%; }
     }
   </style>
 </head>
@@ -464,13 +490,15 @@
         </div>
         <div class="chat-input-area" id="chatInputArea">
           <input type="text" id="messageInput" placeholder="Type a message..." disabled>
+          <label class="attach-btn" id="attachButton">📎 Attach</label>
+          <input type="file" id="fileInput" style="display: none;" multiple>
           <button id="sendButton" disabled>Send</button>
         </div>
       </div>
 
       <!-- RIGHT PANEL -->
       <div class="right-panel">
-        <!-- Consent card (shown when needed) -->
+        <!-- Consent card -->
         <div class="card" id="consentCard">
           <h3>🔐 informed consent</h3>
           <div class="consent-box">
@@ -482,7 +510,7 @@
           </div>
         </div>
 
-        <!-- Dispute intake (after consent, before classification) -->
+        <!-- Dispute intake -->
         <div class="card hidden" id="intakeCard">
           <h3>📋 describe the dispute</h3>
           <textarea id="disputeInput" rows="4" style="width:100%; background:var(--surface-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.8rem; color:var(--text-primary); margin-bottom:1rem; font-family:inherit;" placeholder="e.g., Landlord refuses to return $800 deposit..."></textarea>
@@ -505,7 +533,7 @@
           </div>
         </div>
 
-        <!-- Negotiation tools (both consented) -->
+        <!-- Negotiation tools -->
         <div class="card hidden" id="negotiationCard">
           <h3>⚙️ negotiation tools</h3>
           <div class="button-group">
@@ -514,6 +542,7 @@
           </div>
           <div id="optionsContainer" style="margin-top:1rem;"></div>
           <div id="agreementContainer" style="margin-top:1rem;"></div>
+          <div id="attachmentsContainer" class="attachment-list"></div>
           <hr style="border-color:var(--border); margin:1.5rem 0;">
           <button class="btn btn-outline" id="deleteDataBtn" style="color:var(--danger);">delete my data</button>
         </div>
@@ -527,7 +556,6 @@
           </div>
         </div>
 
-        <!-- n3x ascii signature -->
         <div class="n3x-ascii" style="text-align:center;">---[ n3x · lex ]---</div>
       </div>
     </div>
@@ -537,7 +565,7 @@
     </footer>
   </div>
 
-  <!-- Firebase & Groq config – replace with your keys -->
+  <!-- Firebase & Groq config – REPLACE WITH YOUR KEYS -->
   <script type="importmap">
     {
       "imports": {
@@ -576,14 +604,25 @@
       console.log("Firebase ready");
     } catch (e) {
       console.warn("Firebase failed – using in‑memory mock");
-      // Simple mock for demo (won't persist)
+      // Simple mock for demo
       window.mockDb = { disputes: {} };
       db = {
         doc: (path) => ({ id: path.split('/').pop() }),
-        getDoc: async () => ({ exists: () => false, data: () => ({}) }),
-        setDoc: async () => {},
-        updateDoc: async () => {},
-        onSnapshot: (ref, cb) => { cb({ exists: () => true, data: () => ({}) }); return () => {}; },
+        getDoc: async (ref) => {
+          const data = window.mockDb.disputes[ref.id];
+          return { exists: () => !!data, data: () => data };
+        },
+        setDoc: async (ref, data) => { window.mockDb.disputes[ref.id] = data; },
+        updateDoc: async (ref, updates) => {
+          const id = ref.id;
+          if (window.mockDb.disputes[id]) {
+            Object.assign(window.mockDb.disputes[id], updates);
+          }
+        },
+        onSnapshot: (ref, cb) => {
+          cb({ exists: () => true, data: () => window.mockDb.disputes[ref.id] || {} });
+          return () => {};
+        },
         collection: () => ({})
       };
     }
@@ -610,6 +649,8 @@
     const partyAStatus = document.getElementById('partyAStatus');
     const partyBStatus = document.getElementById('partyBStatus');
     const connectionIndicator = document.getElementById('connectionIndicator');
+    const fileInput = document.getElementById('fileInput');
+    const attachButton = document.getElementById('attachButton');
 
     // Serena WebSocket
     let serenaSocket = null;
@@ -628,7 +669,7 @@
       }
     }
 
-    // ---------- SERENA SETUP (fixed – no spam) ----------
+    // ---------- SERENA SETUP ----------
     function initSerena() {
       if (serenaSocket) serenaSocket.close();
       serenaSocket = new WebSocket(SERENA_WS_URL);
@@ -637,16 +678,7 @@
         console.log('Serena connected');
         updateConnectionStatus(true, 'connected');
         serenaConnected = true;
-        // Send system prompt exactly once
-        if (!serenaSystemSent && currentDisputeId) {
-          serenaSocket.send(JSON.stringify({
-            chatId: currentDisputeId,
-            appId: SERENA_APP_ID,
-            systemPrompt: SERENA_SYSTEM_PROMPT,
-            message: 'System: Negotiation channel open.'
-          }));
-          serenaSystemSent = true;
-        }
+        // Send system prompt once (will be sent on first message)
       });
 
       serenaSocket.addEventListener('message', (event) => {
@@ -683,7 +715,7 @@
       const id = crypto.randomUUID();
       const ref = doc(db, 'disputes', id);
       const disputeData = {
-        createdAt: serverTimestamp(),
+        createdAt: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
         status: 'consent_pending',
         partyA: { consented: false, sessionId: getSessionId() },
         partyB: { consented: false, sessionId: null },
@@ -693,7 +725,7 @@
         options: [],
         selectedOption: null,
         settlementText: '',
-        messages: []
+        attachments: [] // store attached file metadata
       };
       await setDoc(ref, disputeData);
       return id;
@@ -705,14 +737,14 @@
       await addDoc(msgRef, {
         sender,
         text,
-        timestamp: serverTimestamp(),
+        timestamp: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
         party: currentParty
       });
     }
 
-    function addMessageToChat(sender, text) {
+    function addMessageToChat(sender, text, isAttachment = false) {
       const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
+      msgDiv.className = `message ${sender}${isAttachment ? ' attachment' : ''}`;
       msgDiv.textContent = text;
       chatMessages.appendChild(msgDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -733,6 +765,31 @@
       partyAStatus.textContent = data.partyA?.consented ? '✅ consented' : '⏳ pending';
       partyBStatus.textContent = data.partyB?.consented ? '✅ consented' : '⏳ pending';
 
+      // Show attachments if any
+      if (data.attachments && data.attachments.length > 0) {
+        const container = document.getElementById('attachmentsContainer');
+        container.innerHTML = '<h4 style="margin:0.5rem 0;">Attached documents:</h4>';
+        data.attachments.forEach((att, idx) => {
+          const div = document.createElement('div');
+          div.className = 'attachment-item';
+          div.innerHTML = `<span>📎 ${att.name} (${att.type})</span> <button class="btn btn-outline" style="padding:0.2rem 0.8rem;" data-attach="${idx}">view</button>`;
+          container.appendChild(div);
+          div.querySelector('button').addEventListener('click', () => {
+            // show base64 content in a new tab (text) or download
+            if (att.type.startsWith('text/') || att.name.endsWith('.txt')) {
+              const win = window.open();
+              win.document.write(`<pre>${atob(att.content)}</pre>`);
+            } else {
+              // download
+              const a = document.createElement('a');
+              a.href = `data:${att.type};base64,${att.content}`;
+              a.download = att.name;
+              a.click();
+            }
+          });
+        });
+      }
+
       // Decide which cards to show
       if (!data.partyA?.consented && currentParty === 'A') {
         consentCard.classList.remove('hidden');
@@ -746,7 +803,7 @@
         classificationCard.classList.add('hidden');
         shareCard.classList.add('hidden');
         negotiationCard.classList.add('hidden');
-        if (data.disputeText) {
+        if (data.disputeText && !document.querySelector('.message.system.dispute-summary')) {
           addMessageToChat('system', `Dispute: ${data.disputeText}`);
         }
       } else if (data.classification && (!data.partyB?.consented || currentParty === 'A')) {
@@ -821,7 +878,7 @@
     });
 
     document.getElementById('proceedBtn').addEventListener('click', () => {
-      // just reveal share card (already visible)
+      // share card already visible
     });
 
     document.getElementById('copyLinkBtn').addEventListener('click', () => {
@@ -859,6 +916,36 @@
       }
     });
 
+    // File attachment
+    attachButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          const base64 = ev.target.result.split(',')[1]; // remove data URL prefix
+          const attachment = {
+            name: file.name,
+            type: file.type,
+            content: base64,
+            size: file.size
+          };
+          // Store in dispute
+          if (currentDisputeRef) {
+            await updateDoc(currentDisputeRef, {
+              attachments: arrayUnion(attachment)
+            });
+            addMessageToChat('user', `📎 Attached: ${file.name}`, true);
+            addMessageToFirestore('user', `📎 Attached: ${file.name}`);
+          } else {
+            alert('Please start a dispute first');
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+      fileInput.value = ''; // allow re-upload
+    });
+
     sendButton.addEventListener('click', sendMessage);
     messageInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') sendMessage();
@@ -875,15 +962,27 @@
           statements: arrayUnion({ party: currentParty, text, timestamp: new Date().toISOString() })
         });
       }
+      // Send to Serena
       if (serenaSocket && serenaSocket.readyState === WebSocket.OPEN) {
-        serenaSocket.send(JSON.stringify({
-          chatId: currentDisputeId || crypto.randomUUID(),
-          appId: SERENA_APP_ID,
-          systemPrompt: SERENA_SYSTEM_PROMPT,
-          message: text
-        }));
+        if (!serenaSystemSent) {
+          // Send system prompt as first message
+          serenaSocket.send(JSON.stringify({
+            chatId: currentDisputeId || crypto.randomUUID(),
+            appId: SERENA_APP_ID,
+            systemPrompt: SERENA_SYSTEM_PROMPT,
+            message: text
+          }));
+          serenaSystemSent = true;
+        } else {
+          serenaSocket.send(JSON.stringify({
+            chatId: currentDisputeId || crypto.randomUUID(),
+            appId: SERENA_APP_ID,
+            message: text
+          }));
+        }
       } else {
         addMessageToChat('system', 'AI offline. Reconnecting...');
+        initSerena();
       }
     }
 
