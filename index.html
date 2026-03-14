@@ -575,7 +575,7 @@
     </footer>
   </div>
 
-  <!-- Firebase & Groq config – REPLACE WITH YOUR KEYS -->
+  <!-- Firebase & Groq config – now filled with your credentials -->
   <script type="importmap">
     {
       "imports": {
@@ -586,17 +586,18 @@
   </script>
 
   <script type="module">
-    // ---------- CONFIGURATION – REPLACE WITH YOUR OWN ----------
+    // ---------- CONFIGURATION – YOUR FIREBASE AND GROQ KEYS ----------
     const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyB...",          // <-- REPLACE
-      authDomain: "your-app.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-app.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abc123"
+      apiKey: "AIzaSyDu-dywLoaxALdebvZdjfxA83nHBuvFBGE",
+      authDomain: "aurum-dispute-resolution.firebaseapp.com",
+      projectId: "aurum-dispute-resolution",
+      storageBucket: "aurum-dispute-resolution.firebasestorage.app",
+      messagingSenderId: "728479269779",
+      appId: "1:728479269779:web:27b9cdef6c9458e5ff1e66",
+      measurementId: "G-T6S07C9CX1"
     };
 
-    const GROQ_API_KEY = "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";   // <-- REPLACE
+    const GROQ_API_KEY = "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";
     const GROQ_MODEL = "llama-3.3-70b-versatile";
 
     const SERENA_WS_URL = "wss://backend.buildpicoapps.com/api/chatbot/chat";
