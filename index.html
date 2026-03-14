@@ -6,6 +6,7 @@
   <title>AURUM · AI‑assisted dispute resolution</title>
   <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232A2A2A'/%3E%3Cpath d='M30 35 L70 35 L70 65 L30 65 Z' fill='none' stroke='%23E0E0E0' stroke-width='4'/%3E%3Ctext x='32' y='68' font-size='44' fill='%23E0E0E0' font-family='Arial'%3E⚖️%3C/text%3E%3C/svg%3E">
   <style>
+    /* ... (same as previous, keep all your premium styles) ... */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
       --bg: #f8fafc;
@@ -278,9 +279,10 @@
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
         Sign in with Google
       </div>
+      <div id="loginError" style="color:var(--danger); margin-top:1rem;"></div>
     </div>
 
-    <!-- DASHBOARD (visible after login) -->
+    <!-- DASHBOARD -->
     <div id="dashboardScreen" class="hidden">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2>Your disputes</h2>
@@ -289,7 +291,7 @@
       <div id="disputesList" class="dashboard"></div>
     </div>
 
-    <!-- DISPUTE SCREEN (chat + sidebar) -->
+    <!-- DISPUTE SCREEN -->
     <div id="disputeScreen" class="main-grid hidden">
       <!-- LEFT CHAT -->
       <div class="chat-panel">
@@ -382,7 +384,7 @@
 
     // ---------- FIREBASE INIT ----------
     import { initializeApp } from 'firebase/app';
-    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
+    import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
     import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
 
     const app = initializeApp(FIREBASE_CONFIG);
@@ -401,6 +403,7 @@
     const newDisputeBtn = document.getElementById('newDisputeBtn');
     const disputesList = document.getElementById('disputesList');
     const backToDashboardBtn = document.getElementById('backToDashboardBtn');
+    const loginError = document.getElementById('loginError');
 
     // Dispute screen elements
     const chatMessages = document.getElementById('chatMessages');
@@ -438,6 +441,12 @@
     let invitedDisputeId = urlParams.get('dispute');
     let invitedParty = urlParams.get('party'); // may be B
 
+    // ---------- Handle redirect result ----------
+    getRedirectResult(auth).catch((error) => {
+      console.error('Redirect sign-in error:', error);
+      loginError.textContent = 'Sign-in failed: ' + error.message;
+    });
+
     // ---------- Auth state observer ----------
     onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -445,9 +454,9 @@
         userEmailSpan.textContent = user.email;
         userInfo.classList.remove('hidden');
         loginScreen.classList.add('hidden');
+        loginError.textContent = '';
         // Check if there's an invited dispute in URL
         if (invitedDisputeId) {
-          // verify that the user is the correct party
           const disputeRef = doc(db, 'disputes', invitedDisputeId);
           const snap = await getDoc(disputeRef);
           if (snap.exists()) {
@@ -456,8 +465,7 @@
               alert('This dispute link belongs to another user.');
               showDashboard();
             } else {
-              // load the dispute
-              loadDispute(invitedDisputeId, invitedParty);
+              loadDispute(invitedDisputeId, invitedParty || 'A');
             }
           } else {
             alert('Dispute not found.');
@@ -475,17 +483,17 @@
       }
     });
 
-    // ---------- Login / Logout ----------
+    // ---------- Login with redirect ----------
     googleLoginBtn.addEventListener('click', () => {
-      signInWithPopup(auth, provider).catch(console.error);
+      signInWithRedirect(auth, provider);
     });
+
     logoutBtn.addEventListener('click', () => signOut(auth));
 
     // ---------- Dashboard ----------
     async function showDashboard() {
       dashboardScreen.classList.remove('hidden');
       disputeScreen.classList.add('hidden');
-      // Clear any previous dispute listeners
       if (unsubscribeDispute) unsubscribeDispute();
       if (unsubscribeMessages) unsubscribeMessages();
       // Load user's disputes
@@ -540,7 +548,6 @@
         attachments: []
       };
       await setDoc(ref, disputeData);
-      // navigate to the new dispute as Party A
       window.history.pushState({}, '', `?dispute=${id}&party=A`);
       loadDispute(id, 'A');
     });
@@ -553,7 +560,6 @@
       disputeScreen.classList.remove('hidden');
       chatPartyBadge.textContent = `Party ${party}`;
 
-      // Set up real-time listener for dispute document
       if (unsubscribeDispute) unsubscribeDispute();
       unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
         if (!snap.exists()) return;
@@ -561,11 +567,10 @@
         updateDisputeUI(data, party);
       });
 
-      // Set up real-time listener for messages (ordered by time)
       const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(50));
       if (unsubscribeMessages) unsubscribeMessages();
       unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
-        chatMessages.innerHTML = ''; // rebuild (simplest)
+        chatMessages.innerHTML = '';
         snap.forEach(doc => {
           const msg = doc.data();
           addMessageToChat(msg.sender, msg.text, msg.type === 'attachment');
@@ -577,16 +582,13 @@
       partyAStatus.textContent = data.partyA?.consented ? '✅ consented' : '⏳ pending';
       partyBStatus.textContent = data.partyB?.consented ? '✅ consented' : '⏳ pending';
 
-      // Determine which cards to show based on status and party
       if (!data.partyA?.consented && currentParty === 'A') {
-        // Should not happen because partyA consented at creation, but just in case
+        // shouldn't happen
       } else if (!data.partyB?.consented && currentParty === 'B') {
-        // Party B needs to consent
         intakeCard.classList.add('hidden');
         classificationCard.classList.add('hidden');
         shareCard.classList.add('hidden');
         negotiationCard.classList.add('hidden');
-        // Show a consent message in chat? Already done.
       } else if (data.classification && (!data.partyB?.consented || currentParty === 'A')) {
         classificationCard.classList.remove('hidden');
         shareCard.classList.remove('hidden');
@@ -642,27 +644,23 @@
       if (!text || !currentDisputeRef) return;
       messageInput.value = '';
 
-      // Add user message to UI and Firestore
       addMessageToChat('user', text);
       const msgRef = collection(db, 'disputes', currentDisputeId, 'messages');
       await addDoc(msgRef, {
         sender: 'user',
         text,
         timestamp: serverTimestamp(),
-        party: chatPartyBadge.textContent.split(' ')[1] // 'A' or 'B'
+        party: chatPartyBadge.textContent.split(' ')[1]
       });
 
-      // Update statements array
       await updateDoc(currentDisputeRef, {
         statements: arrayUnion({ party: chatPartyBadge.textContent.split(' ')[1], text, timestamp: new Date().toISOString() })
       });
 
-      // Fetch last 20 messages for context
       const messagesQuery = query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20));
       const snap = await getDocs(messagesQuery);
       const history = snap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
 
-      // Call Groq with context
       const systemPrompt = 'You are an impartial AI mediator. Facilitate communication, ask clarifying questions, suggest constructive approaches. Never give legal advice. Be neutral and respectful.';
       const messages = [{ role: 'system', content: systemPrompt }, ...history];
 
@@ -672,16 +670,11 @@
           'Authorization': `Bearer ${GROQ_API_KEY}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          messages,
-          temperature: 0.7
-        })
+        body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7 })
       });
       const data = await response.json();
       const reply = data.choices[0].message.content;
 
-      // Add bot message
       addMessageToChat('bot', reply);
       await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
         sender: 'bot',
@@ -804,7 +797,6 @@
     deleteDataBtn.addEventListener('click', async () => {
       if (confirm('Delete all data for this dispute? This cannot be undone.')) {
         await updateDoc(currentDisputeRef, { deleted: true });
-        // Optionally delete subcollections? For simplicity, just mark deleted.
         showDashboard();
       }
     });
@@ -815,7 +807,7 @@
       showDashboard();
     });
 
-    // ---------- PWA manifest (same as before) ----------
+    // ---------- PWA manifest (optional) ----------
     const manifest = {
       name: 'AURUM Dispute Mediator',
       short_name: 'AURUM',
