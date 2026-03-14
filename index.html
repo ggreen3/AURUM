@@ -298,6 +298,11 @@
       box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
+    .chat-input-area input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .chat-input-area button {
       background: var(--accent);
       color: white;
@@ -310,8 +315,13 @@
       border: 1px solid var(--accent);
     }
 
-    .chat-input-area button:hover {
+    .chat-input-area button:hover:not(:disabled) {
       background: #1d4ed8;
+    }
+
+    .chat-input-area button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .attach-btn {
@@ -490,7 +500,7 @@
         </div>
         <div class="chat-input-area" id="chatInputArea">
           <input type="text" id="messageInput" placeholder="Type a message..." disabled>
-          <label class="attach-btn" id="attachButton">📎 Attach</label>
+          <span class="attach-btn" id="attachButton">📎 Attach</span>
           <input type="file" id="fileInput" style="display: none;" multiple>
           <button id="sendButton" disabled>Send</button>
         </div>
@@ -586,7 +596,7 @@
       appId: "1:1234567890:web:abc123"
     };
 
-    const GROQ_API_KEY = "gsk_...";   // <-- REPLACE
+    const GROQ_API_KEY = "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";   // <-- REPLACE
     const GROQ_MODEL = "llama-3.3-70b-versatile";
 
     const SERENA_WS_URL = "wss://backend.buildpicoapps.com/api/chatbot/chat";
@@ -678,7 +688,6 @@
         console.log('Serena connected');
         updateConnectionStatus(true, 'connected');
         serenaConnected = true;
-        // Send system prompt once (will be sent on first message)
       });
 
       serenaSocket.addEventListener('message', (event) => {
@@ -709,26 +718,6 @@
         localStorage.setItem('sessionId', sid);
       }
       return sid;
-    }
-
-    async function createDispute(initialText) {
-      const id = crypto.randomUUID();
-      const ref = doc(db, 'disputes', id);
-      const disputeData = {
-        createdAt: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
-        status: 'consent_pending',
-        partyA: { consented: false, sessionId: getSessionId() },
-        partyB: { consented: false, sessionId: null },
-        disputeText: initialText,
-        classification: null,
-        statements: [],
-        options: [],
-        selectedOption: null,
-        settlementText: '',
-        attachments: [] // store attached file metadata
-      };
-      await setDoc(ref, disputeData);
-      return id;
     }
 
     async function addMessageToFirestore(sender, text) {
@@ -846,35 +835,57 @@
     // ---------- EVENT HANDLERS ----------
     document.getElementById('consentBtn').addEventListener('click', async () => {
       if (!currentDisputeId) {
-        // start new
-        currentParty = 'A';
+        // create new dispute with partyA consented
+        const id = crypto.randomUUID();
+        const ref = doc(db, 'disputes', id);
+        const disputeData = {
+          createdAt: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
+          status: 'intake',
+          partyA: { consented: true, sessionId: getSessionId() },
+          partyB: { consented: false, sessionId: null },
+          disputeText: '',
+          classification: null,
+          statements: [],
+          options: [],
+          selectedOption: null,
+          settlementText: '',
+          attachments: []
+        };
+        await setDoc(ref, disputeData);
+        currentDisputeId = id;
+        currentDisputeRef = ref;
+        listenToDispute(id);
+        const url = new URL(window.location);
+        url.searchParams.set('dispute', id);
+        url.searchParams.set('party', 'A');
+        window.history.pushState({}, '', url);
         partyBadge.textContent = 'Party A';
         consentCard.classList.add('hidden');
         intakeCard.classList.remove('hidden');
       } else {
-        const ref = doc(db, 'disputes', currentDisputeId);
+        // existing dispute – record consent for current party
         if (currentParty === 'A') {
-          await updateDoc(ref, { 'partyA.consented': true });
+          await updateDoc(currentDisputeRef, { 'partyA.consented': true });
         } else {
-          await updateDoc(ref, { 'partyB.consented': true });
+          await updateDoc(currentDisputeRef, { 'partyB.consented': true });
         }
       }
+    });
+
+    document.getElementById('declineBtn').addEventListener('click', () => {
+      addMessageToChat('system', 'Consent declined. Cannot proceed without consent.');
+      consentCard.classList.add('hidden');
     });
 
     document.getElementById('classifyBtn').addEventListener('click', async () => {
       const text = document.getElementById('disputeInput').value.trim();
       if (!text) return;
-      const classification = await callGroqClassification(text);
       if (!currentDisputeId) {
-        const id = await createDispute(text);
-        currentDisputeId = id;
-        currentDisputeRef = doc(db, 'disputes', id);
-        const url = new URL(window.location);
-        url.searchParams.set('dispute', id);
-        url.searchParams.set('party', currentParty);
-        window.history.pushState({}, '', url);
+        alert('Please consent first.');
+        return;
       }
-      await updateDoc(currentDisputeRef, { classification });
+      const classification = await callGroqClassification(text);
+      await updateDoc(currentDisputeRef, { disputeText: text, classification });
     });
 
     document.getElementById('proceedBtn').addEventListener('click', () => {
@@ -919,6 +930,10 @@
     // File attachment
     attachButton.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', async (e) => {
+      if (!currentDisputeRef) {
+        alert('Please start a dispute first');
+        return;
+      }
       const files = Array.from(e.target.files);
       for (const file of files) {
         const reader = new FileReader();
@@ -931,15 +946,11 @@
             size: file.size
           };
           // Store in dispute
-          if (currentDisputeRef) {
-            await updateDoc(currentDisputeRef, {
-              attachments: arrayUnion(attachment)
-            });
-            addMessageToChat('user', `📎 Attached: ${file.name}`, true);
-            addMessageToFirestore('user', `📎 Attached: ${file.name}`);
-          } else {
-            alert('Please start a dispute first');
-          }
+          await updateDoc(currentDisputeRef, {
+            attachments: arrayUnion(attachment)
+          });
+          addMessageToChat('user', `📎 Attached: ${file.name}`, true);
+          addMessageToFirestore('user', `📎 Attached: ${file.name}`);
         };
         reader.readAsDataURL(file);
       }
