@@ -99,32 +99,32 @@
       padding: 0.2rem 0.6rem;
       border-radius: 40px;
     }
-    .connection-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+    .session-info {
       background: var(--surface);
-      padding: 0.4rem 1.2rem;
-      border-radius: 40px;
       border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 0.4rem 1.2rem;
       font-size: 0.85rem;
+      color: var(--text-secondary);
     }
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--warning);
-    }
-    .dot.connected { background: var(--success); }
-    .main-grid {
+    .dashboard {
       display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 2rem;
-      flex: 1;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
     }
-    @media (max-width: 900px) {
-      .app { padding: 1rem; }
-      .main-grid { grid-template-columns: 1fr; }
+    .dispute-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dispute-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent);
     }
     .chat-panel {
       background: var(--surface);
@@ -186,10 +186,9 @@
       padding: 1.25rem 1.75rem;
       border-top: 1px solid var(--border);
       gap: 0.8rem;
-      flex-wrap: wrap;
     }
     .chat-input-area input {
-      flex: 1 1 200px;
+      flex: 1;
       background: var(--surface-secondary);
       border: 1px solid var(--border);
       border-radius: 48px;
@@ -211,11 +210,12 @@
       border-radius: 48px;
       padding: 0.9rem 1.4rem;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
     }
-    .right-panel { display: flex; flex-direction: column; gap: 1.5rem; }
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
     .card {
       background: var(--surface);
       border-radius: var(--radius-md);
@@ -228,28 +228,6 @@
       color: var(--text-muted);
       margin-bottom: 1.25rem;
     }
-    .consent-box {
-      background: var(--surface-secondary);
-      border-radius: var(--radius-sm);
-      padding: 1.2rem;
-      border-left: 3px solid var(--accent);
-      margin-bottom: 1rem;
-    }
-    .button-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.8rem;
-      margin-top: 1rem;
-    }
-    .share-link {
-      background: var(--surface-secondary);
-      padding: 0.8rem 1rem;
-      border-radius: var(--radius-sm);
-      font-family: monospace;
-      font-size: 0.8rem;
-      word-break: break-all;
-      border: 1px solid var(--border);
-    }
     .options-list li {
       background: var(--surface-secondary);
       border-radius: var(--radius-sm);
@@ -259,37 +237,12 @@
       cursor: pointer;
     }
     .options-list li.selected { border-left-color: var(--success); background: #e6f7ec; }
-    .agreement-preview {
-      background: var(--surface-secondary);
-      border-radius: var(--radius-sm);
-      padding: 1rem;
-      white-space: pre-wrap;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-    .attachment-list { margin-top: 1rem; }
-    .attachment-item {
-      background: var(--surface-secondary);
-      border-radius: var(--radius-sm);
-      padding: 0.5rem 1rem;
-      margin-bottom: 0.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
     footer {
       margin-top: 3rem;
       text-align: center;
       color: var(--text-muted);
       border-top: 1px solid var(--border);
       padding-top: 2rem;
-    }
-    .n3x-ascii {
-      font-family: monospace;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      letter-spacing: 2px;
-      margin-top: 1rem;
     }
   </style>
 </head>
@@ -301,48 +254,55 @@
         <span class="logo-text">AURUM</span>
         <span class="logo-tag">n3x // dispute resolution</span>
       </div>
-      <div class="connection-indicator" id="connectionIndicator">
-        <span class="dot"></span>
-        <span>initializing</span>
+      <div class="session-info" id="sessionDisplay">
+        Session: <span id="sessionIdDisplay">new</span>
       </div>
     </header>
 
-    <div class="main-grid" id="mainContent">
-      <!-- MAIN CHAT (always visible once dispute is loaded) -->
+    <!-- DASHBOARD (shown initially) -->
+    <div id="dashboardScreen">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h2>Your disputes</h2>
+        <button class="btn btn-primary" id="newDisputeBtn">➕ New Dispute</button>
+      </div>
+      <div id="disputesList" class="dashboard"></div>
+    </div>
+
+    <!-- DISPUTE SCREEN -->
+    <div id="disputeScreen" class="main-grid hidden">
+      <!-- LEFT CHAT -->
       <div class="chat-panel">
         <div class="chat-header">
           <h2>⚡ Negotiation channel</h2>
-          <span class="party-badge" id="partyBadge">Party A</span>
+          <span class="party-badge" id="chatPartyBadge">Party A</span>
         </div>
-        <div class="chat-messages" id="chatMessages">
-          <div class="message system">Welcome to AURUM. Start a new dispute or use an invite link.</div>
-        </div>
+        <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-area">
-          <input type="text" id="messageInput" placeholder="Type a message..." disabled>
+          <input type="text" id="messageInput" placeholder="Type a message...">
           <span class="attach-btn" id="attachButton">📎 Attach</span>
           <input type="file" id="fileInput" style="display:none;" multiple>
-          <button id="sendButton" disabled>Send</button>
+          <button id="sendButton">Send</button>
         </div>
       </div>
 
-      <!-- RIGHT PANEL – dynamic cards -->
+      <!-- RIGHT SIDEBAR -->
       <div class="right-panel">
-        <!-- Consent card (shown when needed) -->
-        <div class="card" id="consentCard">
-          <h3>🔐 informed consent</h3>
-          <div class="consent-box">
-            <p>AURUM is an AI assistant, not a lawyer or mediator. It does not provide legal advice. Conversations are confidential and stored only with your consent. You may delete your data at any time.</p>
-            <div class="button-group">
-              <button class="btn btn-primary" id="consentBtn">I consent</button>
-              <button class="btn btn-outline" id="declineBtn">I do not consent</button>
+        <!-- Consent card (shown for Party B when needed) -->
+        <div class="card hidden" id="consentCard">
+          <h3>🔐 consent required</h3>
+          <div style="background:var(--surface-secondary); border-radius:var(--radius-sm); padding:1.2rem; border-left:3px solid var(--accent);">
+            <p style="color:var(--text-secondary); margin-bottom:1.2rem;">You have been invited as Party B. By consenting, you agree to participate in AI‑assisted negotiation.</p>
+            <div style="display:flex; gap:0.8rem;">
+              <button class="btn btn-primary" id="partyBConsentBtn">I consent</button>
+              <button class="btn btn-outline" id="partyBDeclineBtn">Decline</button>
             </div>
           </div>
         </div>
 
-        <!-- Dispute intake (after consent, before classification) -->
+        <!-- Intake card (Party A after consent) -->
         <div class="card hidden" id="intakeCard">
           <h3>📋 describe the dispute</h3>
-          <textarea id="disputeInput" rows="4" style="width:100%; background:var(--surface-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.8rem; margin-bottom:1rem;"></textarea>
+          <textarea id="disputeInput" rows="4" style="width:100%; background:var(--surface-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.8rem; margin-bottom:1rem;" placeholder="e.g., Landlord refuses to return $800 deposit..."></textarea>
           <button class="btn btn-primary" id="classifyBtn">analyze dispute</button>
         </div>
 
@@ -363,7 +323,7 @@
         <!-- Negotiation tools (both consented) -->
         <div class="card hidden" id="negotiationCard">
           <h3>⚙️ negotiation tools</h3>
-          <div class="button-group">
+          <div class="button-group" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
             <button class="btn btn-outline" id="getOptionsBtn">generate options</button>
             <button class="btn btn-outline" id="generateAgreementBtn">create settlement</button>
           </div>
@@ -372,17 +332,17 @@
           <div id="attachmentsContainer" class="attachment-list"></div>
           <hr style="border-color:var(--border); margin:1.5rem 0;">
           <button class="btn btn-outline" id="deleteDataBtn" style="color:var(--danger);">delete my data</button>
+          <button class="btn btn-outline" id="backToDashboardBtn" style="margin-top:1rem;">← Back to dashboard</button>
         </div>
 
         <!-- Party status -->
         <div class="card">
           <h3>👥 parties</h3>
           <div style="display:flex; justify-content:space-between;">
-            <span>Party A: <span id="partyAStatus">pending</span></span>
-            <span>Party B: <span id="partyBStatus">pending</span></span>
+            <span>Party A: <span id="partyAStatus"></span></span>
+            <span>Party B: <span id="partyBStatus"></span></span>
           </div>
         </div>
-
         <div class="n3x-ascii" style="text-align:center;">---[ n3x · lex ]---</div>
       </div>
     </div>
@@ -390,7 +350,7 @@
     <footer>© 2026 AURUM · AI‑assisted early dispute resolution</footer>
   </div>
 
-  <!-- Firebase SDK (modular) -->
+  <!-- Firebase SDKs (Firestore only) -->
   <script type="importmap">
     {
       "imports": {
@@ -412,69 +372,50 @@
       measurementId: "G-T6S07C9CX1"
     };
 
-    const GROQ_API_KEY = "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"; // replace if needed
+    const GROQ_API_KEY = "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";
     const GROQ_MODEL = "llama-3.3-70b-versatile";
-
-    const SERENA_WS_URL = "wss://backend.buildpicoapps.com/api/chatbot/chat";
-    const SERENA_APP_ID = "after-consumer";
-    const SERENA_SYSTEM_PROMPT = `You are an impartial AI mediator. Facilitate communication, ask clarifying questions, suggest constructive approaches. Never give legal advice. Be neutral and respectful.`;
 
     // ---------- FIREBASE INIT ----------
     import { initializeApp } from 'firebase/app';
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, addDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
 
-    let app, db;
-    try {
-      app = initializeApp(FIREBASE_CONFIG);
-      db = getFirestore(app);
-      console.log("Firebase ready");
-    } catch (e) {
-      console.warn("Firebase failed – using in‑memory mock");
-      window.mockDb = { disputes: {} };
-      db = {
-        doc: (path) => ({ id: path.split('/').pop() }),
-        getDoc: async (ref) => {
-          const data = window.mockDb.disputes[ref.id];
-          return { exists: () => !!data, data: () => data };
-        },
-        setDoc: async (ref, data) => { window.mockDb.disputes[ref.id] = data; },
-        updateDoc: async (ref, updates) => {
-          const id = ref.id;
-          if (window.mockDb.disputes[id]) Object.assign(window.mockDb.disputes[id], updates);
-        },
-        onSnapshot: (ref, cb) => {
-          cb({ exists: () => true, data: () => window.mockDb.disputes[ref.id] || {} });
-          return () => {};
-        },
-        collection: () => ({})
-      };
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db = getFirestore(app);
+
+    // ---------- SESSION MANAGEMENT ----------
+    function getSessionId() {
+      let sid = localStorage.getItem('sessionId');
+      if (!sid) {
+        sid = crypto.randomUUID();
+        localStorage.setItem('sessionId', sid);
+      }
+      return sid;
     }
+    const sessionId = getSessionId();
+    document.getElementById('sessionIdDisplay').textContent = sessionId.substring(0,8) + '…';
 
-    // ---------- GLOBAL STATE ----------
-    const urlParams = new URLSearchParams(window.location.search);
-    const disputeId = urlParams.get('dispute');
-    const partyParam = urlParams.get('party');
-    let currentParty = partyParam === 'B' ? 'B' : 'A';
-    let currentDisputeId = disputeId || null;
-    let currentDisputeRef = null;
-    let unsubscribeDispute = null;
-    let unsubscribeMessages = null;
+    // ---------- UI Elements ----------
+    const dashboardScreen = document.getElementById('dashboardScreen');
+    const disputeScreen = document.getElementById('disputeScreen');
+    const newDisputeBtn = document.getElementById('newDisputeBtn');
+    const disputesList = document.getElementById('disputesList');
+    const backToDashboardBtn = document.getElementById('backToDashboardBtn');
+    const consentCard = document.getElementById('consentCard');
+    const partyBConsentBtn = document.getElementById('partyBConsentBtn');
+    const partyBDeclineBtn = document.getElementById('partyBDeclineBtn');
 
-    // UI elements
-    const connectionIndicator = document.getElementById('connectionIndicator');
-    const partyBadge = document.getElementById('partyBadge');
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
     const attachButton = document.getElementById('attachButton');
     const fileInput = document.getElementById('fileInput');
-    const consentCard = document.getElementById('consentCard');
+    const chatPartyBadge = document.getElementById('chatPartyBadge');
+    const partyAStatus = document.getElementById('partyAStatus');
+    const partyBStatus = document.getElementById('partyBStatus');
     const intakeCard = document.getElementById('intakeCard');
     const classificationCard = document.getElementById('classificationCard');
     const shareCard = document.getElementById('shareCard');
     const negotiationCard = document.getElementById('negotiationCard');
-    const partyAStatus = document.getElementById('partyAStatus');
-    const partyBStatus = document.getElementById('partyBStatus');
     const disputeInput = document.getElementById('disputeInput');
     const classifyBtn = document.getElementById('classifyBtn');
     const classificationDisplay = document.getElementById('classificationDisplay');
@@ -488,90 +429,110 @@
     const attachmentsContainer = document.getElementById('attachmentsContainer');
     const deleteDataBtn = document.getElementById('deleteDataBtn');
 
-    // Serena WebSocket
-    let serenaSocket = null;
-    let serenaConnected = false;
-    let serenaSystemSent = false;
+    // ---------- Global state ----------
+    let currentDisputeId = null;
+    let currentDisputeRef = null;
+    let unsubscribeDispute = null;
+    let unsubscribeMessages = null;
+    let urlParams = new URLSearchParams(window.location.search);
+    let invitedDisputeId = urlParams.get('dispute');
+    let invitedParty = urlParams.get('party'); // may be B
 
-    function updateConnectionStatus(ok, msg) {
-      const dot = connectionIndicator.querySelector('.dot');
-      const span = connectionIndicator.querySelector('span:last-child');
-      if (ok) {
-        dot.className = 'dot connected';
-        span.textContent = msg || 'connected';
-      } else {
-        dot.className = 'dot';
-        span.textContent = msg || 'disconnected';
-      }
-    }
-
-    // ---------- SERENA SETUP ----------
-    function initSerena() {
-      if (serenaSocket) serenaSocket.close();
-      serenaSocket = new WebSocket(SERENA_WS_URL);
-      serenaSocket.addEventListener('open', () => {
-        updateConnectionStatus(true, 'connected');
-        serenaConnected = true;
-      });
-      serenaSocket.addEventListener('message', (event) => {
-        const text = event.data;
-        addMessageToChat('bot', text);
-        if (db && currentDisputeRef) addMessageToFirestore('bot', text);
-      });
-      serenaSocket.addEventListener('close', () => {
-        updateConnectionStatus(false, 'disconnected');
-        serenaConnected = false;
-        serenaSystemSent = false;
-        setTimeout(initSerena, 3000);
-      });
-      serenaSocket.addEventListener('error', () => updateConnectionStatus(false, 'error'));
-    }
-
-    // ---------- HELPER FUNCTIONS ----------
-    function getSessionId() {
-      let sid = localStorage.getItem('sessionId');
-      if (!sid) {
-        sid = crypto.randomUUID();
-        localStorage.setItem('sessionId', sid);
-      }
-      return sid;
-    }
-
-    async function addMessageToFirestore(sender, text, isAttachment = false) {
-      if (!currentDisputeRef) return;
-      const msgRef = collection(db, 'disputes', currentDisputeId, 'messages');
-      await addDoc(msgRef, {
-        sender,
-        text,
-        timestamp: serverTimestamp(),
-        party: currentParty,
-        type: isAttachment ? 'attachment' : 'text'
-      });
-    }
-
-    function addMessageToChat(sender, text, isAttachment = false) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
-      if (isAttachment) msgDiv.classList.add('attachment');
-      msgDiv.textContent = text;
-      chatMessages.appendChild(msgDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    // Listen to dispute changes
-    function listenToDispute(id) {
+    // ---------- Load dashboard on start ----------
+    function showDashboard() {
+      dashboardScreen.classList.remove('hidden');
+      disputeScreen.classList.add('hidden');
       if (unsubscribeDispute) unsubscribeDispute();
-      currentDisputeRef = doc(db, 'disputes', id);
+      if (unsubscribeMessages) unsubscribeMessages();
+      loadDisputes();
+    }
+
+    async function loadDisputes() {
+      const q = query(collection(db, 'disputes'), where('partyA.sessionId', '==', sessionId));
+      const q2 = query(collection(db, 'disputes'), where('partyB.sessionId', '==', sessionId));
+      const [snapA, snapB] = await Promise.all([getDocs(q), getDocs(q2)]);
+      const disputes = [...snapA.docs, ...snapB.docs].map(doc => ({ id: doc.id, ...doc.data() }));
+      renderDisputes(disputes);
+    }
+
+    function renderDisputes(disputes) {
+      disputesList.innerHTML = '';
+      if (disputes.length === 0) {
+        disputesList.innerHTML = '<p style="color:var(--text-muted);">No disputes yet. Start a new one.</p>';
+        return;
+      }
+      disputes.forEach(d => {
+        const card = document.createElement('div');
+        card.className = 'dispute-card';
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-weight:600;">${d.disputeText?.substring(0,50) || 'Untitled'}...</span>
+            <span style="color:var(--text-muted);">${d.partyA?.sessionId === sessionId ? 'Party A' : 'Party B'}</span>
+          </div>
+          <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-muted);">
+            Status: ${d.partyA?.consented && d.partyB?.consented ? 'Both consented' : 'Pending consent'}
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          const party = d.partyA?.sessionId === sessionId ? 'A' : 'B';
+          loadDispute(d.id, party);
+        });
+        disputesList.appendChild(card);
+      });
+    }
+
+    // ---------- New Dispute ----------
+    newDisputeBtn.addEventListener('click', async () => {
+      const id = crypto.randomUUID();
+      const ref = doc(db, 'disputes', id);
+      const disputeData = {
+        createdAt: serverTimestamp(),
+        status: 'intake',
+        partyA: { sessionId: sessionId, consented: true },
+        partyB: { sessionId: null, consented: false },
+        disputeText: '',
+        classification: null,
+        statements: [],
+        options: [],
+        selectedOption: null,
+        settlementText: '',
+        attachments: []
+      };
+      await setDoc(ref, disputeData);
+      window.history.pushState({}, '', `?dispute=${id}&party=A`);
+      loadDispute(id, 'A');
+    });
+
+    // ---------- Load a dispute ----------
+    async function loadDispute(disputeId, party) {
+      currentDisputeId = disputeId;
+      currentDisputeRef = doc(db, 'disputes', disputeId);
+      dashboardScreen.classList.add('hidden');
+      disputeScreen.classList.remove('hidden');
+      chatPartyBadge.textContent = `Party ${party}`;
+
+      // Verify session match (simple warning)
+      const snap = await getDoc(currentDisputeRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        if (party === 'A' && data.partyA.sessionId && data.partyA.sessionId !== sessionId) {
+          alert('This dispute is associated with a different browser session for Party A. Using incognito or another browser?');
+        } else if (party === 'B' && data.partyB.sessionId && data.partyB.sessionId !== sessionId) {
+          alert('This dispute link is for Party B but was already claimed by another session. Continuing may confuse the other party.');
+        }
+      }
+
+      if (unsubscribeDispute) unsubscribeDispute();
       unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
-        updateUIFromDispute(data);
+        updateDisputeUI(data, party);
       });
 
-      const messagesQuery = query(collection(db, 'disputes', id, 'messages'), orderBy('timestamp', 'asc'), limit(50));
+      const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(50));
       if (unsubscribeMessages) unsubscribeMessages();
       unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
-        chatMessages.innerHTML = ''; // rebuild
+        chatMessages.innerHTML = '';
         snap.forEach(doc => {
           const msg = doc.data();
           addMessageToChat(msg.sender, msg.text, msg.type === 'attachment');
@@ -579,53 +540,26 @@
       });
     }
 
-    function updateUIFromDispute(data) {
+    function updateDisputeUI(data, currentParty) {
       partyAStatus.textContent = data.partyA?.consented ? '✅ consented' : '⏳ pending';
       partyBStatus.textContent = data.partyB?.consented ? '✅ consented' : '⏳ pending';
 
-      // Show attachments
-      if (data.attachments && data.attachments.length) {
-        attachmentsContainer.innerHTML = '<h4 style="margin:0.5rem 0;">Attached documents:</h4>';
-        data.attachments.forEach((att, idx) => {
-          const div = document.createElement('div');
-          div.className = 'attachment-item';
-          div.innerHTML = `<span>📎 ${att.name} (${att.type})</span> <button class="btn btn-outline" style="padding:0.2rem 0.8rem;" data-attach="${idx}">view</button>`;
-          attachmentsContainer.appendChild(div);
-          div.querySelector('button').addEventListener('click', () => {
-            if (att.type.startsWith('text/') || att.name.endsWith('.txt')) {
-              const win = window.open();
-              win.document.write(`<pre>${atob(att.content)}</pre>`);
-            } else {
-              const a = document.createElement('a');
-              a.href = `data:${att.type};base64,${att.content}`;
-              a.download = att.name;
-              a.click();
-            }
-          });
-        });
-      }
+      // Hide all cards first
+      intakeCard.classList.add('hidden');
+      classificationCard.classList.add('hidden');
+      shareCard.classList.add('hidden');
+      negotiationCard.classList.add('hidden');
+      consentCard.classList.add('hidden');
 
-      // Determine which cards to show based on consent and status
-      const sid = getSessionId();
-      if (!data.partyA?.consented && currentParty === 'A') {
+      if (!data.partyB?.consented && currentParty === 'B') {
+        // Party B hasn't consented – show consent card
         consentCard.classList.remove('hidden');
-        intakeCard.classList.add('hidden');
-        classificationCard.classList.add('hidden');
-        shareCard.classList.add('hidden');
-        negotiationCard.classList.add('hidden');
-      } else if (!data.partyB?.consented && currentParty === 'B') {
-        consentCard.classList.remove('hidden');
-        intakeCard.classList.add('hidden');
-        classificationCard.classList.add('hidden');
-        shareCard.classList.add('hidden');
-        negotiationCard.classList.add('hidden');
-        if (data.disputeText) addMessageToChat('system', `Dispute: ${data.disputeText}`);
+      } else if (!data.classification && currentParty === 'A') {
+        // Party A, not yet classified
+        intakeCard.classList.remove('hidden');
       } else if (data.classification && (!data.partyB?.consented || currentParty === 'A')) {
         classificationCard.classList.remove('hidden');
         shareCard.classList.remove('hidden');
-        intakeCard.classList.add('hidden');
-        consentCard.classList.add('hidden');
-        negotiationCard.classList.add('hidden');
         classificationDisplay.innerHTML = `
           <p><strong>Domain:</strong> ${data.classification.domain}</p>
           <p><strong>Issues:</strong> ${data.classification.issues.join(', ')}</p>
@@ -634,10 +568,6 @@
         const shareUrl = `${window.location.origin}${window.location.pathname}?dispute=${currentDisputeId}&party=B`;
         shareLink.textContent = shareUrl;
       } else if (data.partyA?.consented && data.partyB?.consented) {
-        intakeCard.classList.add('hidden');
-        classificationCard.classList.add('hidden');
-        shareCard.classList.add('hidden');
-        consentCard.classList.add('hidden');
         negotiationCard.classList.remove('hidden');
         messageInput.disabled = false;
         sendButton.disabled = false;
@@ -652,71 +582,145 @@
           });
         }
         if (data.settlementText) {
-          agreementContainer.innerHTML = `<div class="agreement-preview">${data.settlementText}</div>`;
+          agreementContainer.innerHTML = `<div style="background:var(--surface-secondary); padding:1rem; border-radius:var(--radius-sm); white-space:pre-wrap;">${data.settlementText}</div>`;
+        }
+        // Show attachments
+        if (data.attachments && data.attachments.length) {
+          attachmentsContainer.innerHTML = '<h4 style="margin:0.5rem 0;">Attached documents:</h4>';
+          data.attachments.forEach((att, idx) => {
+            const div = document.createElement('div');
+            div.className = 'attachment-item';
+            div.innerHTML = `<span>📎 ${att.name}</span> <button class="btn btn-outline" style="padding:0.2rem 0.8rem;" data-attach="${idx}">view</button>`;
+            attachmentsContainer.appendChild(div);
+            div.querySelector('button').addEventListener('click', () => {
+              if (att.type.startsWith('text/') || att.name.endsWith('.txt')) {
+                const win = window.open();
+                win.document.write(`<pre>${atob(att.content)}</pre>`);
+              } else {
+                const a = document.createElement('a');
+                a.href = `data:${att.type};base64,${att.content}`;
+                a.download = att.name;
+                a.click();
+              }
+            });
+          });
+        } else {
+          attachmentsContainer.innerHTML = '';
         }
       }
     }
 
-    // ---------- EVENT HANDLERS ----------
-    document.getElementById('consentBtn').addEventListener('click', async () => {
-      if (!currentDisputeId) {
-        // start new dispute
-        const id = crypto.randomUUID();
-        const ref = doc(db, 'disputes', id);
-        const disputeData = {
-          createdAt: serverTimestamp(),
-          status: 'intake',
-          partyA: { consented: true, sessionId: getSessionId() },
-          partyB: { consented: false, sessionId: null },
-          disputeText: '',
-          classification: null,
-          statements: [],
-          options: [],
-          selectedOption: null,
-          settlementText: '',
-          attachments: []
-        };
-        await setDoc(ref, disputeData);
-        currentDisputeId = id;
-        currentDisputeRef = ref;
-        listenToDispute(id);
-        const url = new URL(window.location);
-        url.searchParams.set('dispute', id);
-        url.searchParams.set('party', 'A');
-        window.history.pushState({}, '', url);
-        partyBadge.textContent = 'Party A';
-        consentCard.classList.add('hidden');
-        intakeCard.classList.remove('hidden');
-      } else {
-        // existing dispute – record consent
-        if (currentParty === 'A') {
-          await updateDoc(currentDisputeRef, { 'partyA.consented': true, 'partyA.sessionId': getSessionId() });
-        } else {
-          await updateDoc(currentDisputeRef, { 'partyB.consented': true, 'partyB.sessionId': getSessionId() });
-        }
-      }
-    });
+    function addMessageToChat(sender, text, isAttachment = false) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+      if (isAttachment) msgDiv.classList.add('attachment');
+      msgDiv.textContent = text;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 
-    document.getElementById('declineBtn').addEventListener('click', () => {
-      addMessageToChat('system', 'Consent declined. Cannot proceed.');
+    // ---------- Party B Consent ----------
+    partyBConsentBtn.addEventListener('click', async () => {
+      if (!currentDisputeRef) return;
+      await updateDoc(currentDisputeRef, {
+        'partyB.sessionId': sessionId,
+        'partyB.consented': true
+      });
       consentCard.classList.add('hidden');
     });
 
+    partyBDeclineBtn.addEventListener('click', () => {
+      alert('You declined consent. You can close this tab.');
+      showDashboard();
+    });
+
+    // ---------- Message Sending ----------
+    sendButton.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    async function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text || !currentDisputeRef) return;
+      messageInput.value = '';
+
+      addMessageToChat('user', text);
+      const msgRef = collection(db, 'disputes', currentDisputeId, 'messages');
+      await addDoc(msgRef, {
+        sender: 'user',
+        text,
+        timestamp: serverTimestamp(),
+        party: chatPartyBadge.textContent.split(' ')[1]
+      });
+
+      await updateDoc(currentDisputeRef, {
+        statements: arrayUnion({ party: chatPartyBadge.textContent.split(' ')[1], text, timestamp: new Date().toISOString() })
+      });
+
+      const messagesQuery = query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20));
+      const snap = await getDocs(messagesQuery);
+      const history = snap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
+
+      const systemPrompt = 'You are an impartial AI mediator. Facilitate communication, ask clarifying questions, suggest constructive approaches. Never give legal advice. Be neutral and respectful.';
+      const messages = [{ role: 'system', content: systemPrompt }, ...history];
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7 })
+      });
+      const data = await response.json();
+      const reply = data.choices[0].message.content;
+
+      addMessageToChat('bot', reply);
+      await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
+        sender: 'bot',
+        text: reply,
+        timestamp: serverTimestamp()
+      });
+    }
+
+    // ---------- File Attachment ----------
+    attachButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      if (!currentDisputeRef) return;
+      const files = Array.from(e.target.files);
+      for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          const base64 = ev.target.result.split(',')[1];
+          const attachment = { name: file.name, type: file.type, content: base64, size: file.size };
+          await updateDoc(currentDisputeRef, { attachments: arrayUnion(attachment) });
+          addMessageToChat('user', `📎 Attached: ${file.name}`, true);
+          await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
+            sender: 'user',
+            text: `📎 Attached: ${file.name}`,
+            timestamp: serverTimestamp(),
+            type: 'attachment'
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+      fileInput.value = '';
+    });
+
+    // ---------- Classification ----------
     classifyBtn.addEventListener('click', async () => {
       const text = disputeInput.value.trim();
       if (!text) return;
-      if (!currentDisputeId) { alert('Please consent first.'); return; }
       const classification = await callGroqClassification(text);
       await updateDoc(currentDisputeRef, { disputeText: text, classification });
     });
 
-    proceedBtn.addEventListener('click', () => {}); // share card already visible
-
-    copyLinkBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(shareLink.textContent);
-      alert('Link copied!');
+    proceedBtn.addEventListener('click', () => {
+      // Already visible
     });
 
+    // ---------- Options & Agreement ----------
     getOptionsBtn.addEventListener('click', async () => {
       const snap = await getDoc(currentDisputeRef);
       const data = snap.data();
@@ -739,71 +743,7 @@
       await updateDoc(currentDisputeRef, { settlementText: agreement });
     });
 
-    deleteDataBtn.addEventListener('click', async () => {
-      if (confirm('Delete all data for this dispute? This cannot be undone.')) {
-        await updateDoc(currentDisputeRef, { deleted: true });
-        window.location.href = window.location.pathname;
-      }
-    });
-
-    // File attachment
-    attachButton.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', async (e) => {
-      if (!currentDisputeRef) { alert('Please start a dispute first'); return; }
-      const files = Array.from(e.target.files);
-      for (const file of files) {
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-          const base64 = ev.target.result.split(',')[1];
-          const attachment = { name: file.name, type: file.type, content: base64, size: file.size };
-          await updateDoc(currentDisputeRef, { attachments: arrayUnion(attachment) });
-          addMessageToChat('user', `📎 Attached: ${file.name}`, true);
-          addMessageToFirestore('user', `📎 Attached: ${file.name}`, true);
-        };
-        reader.readAsDataURL(file);
-      }
-      fileInput.value = '';
-    });
-
-    sendButton.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-      addMessageToChat('user', text);
-      messageInput.value = '';
-      if (currentDisputeRef) {
-        addMessageToFirestore('user', text);
-        updateDoc(currentDisputeRef, {
-          statements: arrayUnion({ party: currentParty, text, timestamp: new Date().toISOString() })
-        });
-      }
-      if (serenaSocket && serenaSocket.readyState === WebSocket.OPEN) {
-        if (!serenaSystemSent) {
-          serenaSocket.send(JSON.stringify({
-            chatId: currentDisputeId || crypto.randomUUID(),
-            appId: SERENA_APP_ID,
-            systemPrompt: SERENA_SYSTEM_PROMPT,
-            message: text
-          }));
-          serenaSystemSent = true;
-        } else {
-          serenaSocket.send(JSON.stringify({
-            chatId: currentDisputeId || crypto.randomUUID(),
-            appId: SERENA_APP_ID,
-            message: text
-          }));
-        }
-      } else {
-        addMessageToChat('system', 'AI offline. Reconnecting...');
-        initSerena();
-      }
-    }
-
-    // ---------- GROQ API CALLS ----------
+    // ---------- Groq API Helpers ----------
     async function callGroqClassification(text) {
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -853,20 +793,36 @@
       return data.choices[0].message.content;
     }
 
-    // ---------- INIT ----------
-    window.addEventListener('load', () => {
-      initSerena();
-      if (disputeId) {
-        currentDisputeId = disputeId;
-        listenToDispute(disputeId);
-        partyBadge.textContent = `Party ${currentParty}`;
-      } else {
-        partyBadge.textContent = 'Party A (initiator)';
-        consentCard.classList.remove('hidden');
+    // ---------- Copy link ----------
+    copyLinkBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(shareLink.textContent);
+      alert('Link copied!');
+    });
+
+    // ---------- Delete data ----------
+    deleteDataBtn.addEventListener('click', async () => {
+      if (confirm('Delete all data for this dispute? This cannot be undone.')) {
+        await updateDoc(currentDisputeRef, { deleted: true });
+        showDashboard();
       }
     });
 
-    // PWA manifest (optional)
+    // ---------- Back to dashboard ----------
+    backToDashboardBtn.addEventListener('click', () => {
+      window.history.pushState({}, '', '/');
+      showDashboard();
+    });
+
+    // ---------- Handle invited dispute on load ----------
+    window.addEventListener('load', () => {
+      if (invitedDisputeId) {
+        loadDispute(invitedDisputeId, invitedParty || 'A');
+      } else {
+        showDashboard();
+      }
+    });
+
+    // ---------- PWA manifest (optional) ----------
     const manifest = {
       name: 'AURUM Dispute Mediator',
       short_name: 'AURUM',
