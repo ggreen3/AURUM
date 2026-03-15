@@ -6,7 +6,13 @@
   <title>AURUM · AI‑assisted dispute resolution</title>
   <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232A2A2A'/%3E%3Cpath d='M30 35 L70 35 L70 65 L30 65 Z' fill='none' stroke='%23E0E0E0' stroke-width='4'/%3E%3Ctext x='32' y='68' font-size='44' fill='%23E0E0E0' font-family='Arial'%3E⚖️%3C/text%3E%3C/svg%3E">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* ---------- RESET & PREMIUM VARIABLES ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     :root {
       --bg: #f8fafc;
       --surface: #ffffff;
@@ -16,28 +22,34 @@
       --text-secondary: #475569;
       --text-muted: #64748b;
       --accent: #2563eb;
+      --accent-soft: #3b82f6;
+      --accent-glow: rgba(37, 99, 235, 0.1);
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
       --font-serif: 'Times New Roman', Georgia, serif;
       --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.02);
-      --shadow-md: 0 4px 6px -2px rgba(0,0,0,0.05);
-      --shadow-lg: 0 20px 25px -8px rgba(0,0,0,0.05);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 6px -2px rgba(0,0,0,0.05), 0 10px 15px -5px rgba(0,0,0,0.03);
+      --shadow-lg: 0 20px 25px -8px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.02);
       --radius-sm: 12px;
       --radius-md: 20px;
       --radius-lg: 32px;
     }
+
     body {
       background: var(--bg);
       color: var(--text-primary);
       font-family: var(--font-sans);
+      line-height: 1.5;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       -webkit-font-smoothing: antialiased;
     }
+
     .hidden { display: none !important; }
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -47,23 +59,49 @@
       font-weight: 500;
       border-radius: 40px;
       border: 1px solid transparent;
+      transition: all 0.2s ease;
       cursor: pointer;
       background: white;
       color: var(--text-primary);
       border-color: var(--border);
-      transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
     }
+
     .btn-primary {
       background: var(--accent);
       color: white;
       border-color: var(--accent);
     }
-    .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
-    .btn-outline { background: transparent; color: var(--text-secondary); }
-    .btn-outline:hover { background: var(--surface-secondary); }
-    .btn-success { background: var(--success); color: white; }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px -4px var(--accent-glow);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text-secondary);
+    }
+
+    .btn-outline:hover {
+      background: var(--surface-secondary);
+      border-color: var(--text-muted);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+      border-color: var(--success);
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
     .app {
-      max-width: 1600px;
+      max-width: 1800px;
       margin: 0 auto;
       padding: 2rem;
       width: 100%;
@@ -71,6 +109,7 @@
       display: flex;
       flex-direction: column;
     }
+
     header {
       display: flex;
       justify-content: space-between;
@@ -79,18 +118,27 @@
       padding-bottom: 1rem;
       border-bottom: 1px solid var(--border);
     }
+
     .logo-block {
       display: flex;
       align-items: baseline;
       gap: 0.5rem;
     }
-    .logo-icon { font-size: 2rem; }
+
+    .logo-icon {
+      font-size: 2rem;
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+    }
+
     .logo-text {
       font-size: 1.6rem;
       font-weight: 350;
       font-family: var(--font-serif);
       letter-spacing: -0.02em;
+      color: var(--text-primary);
     }
+
     .logo-tag {
       font-family: monospace;
       font-size: 0.75rem;
@@ -98,55 +146,144 @@
       background: var(--surface-secondary);
       padding: 0.2rem 0.6rem;
       border-radius: 40px;
+      margin-left: 0.5rem;
     }
-    .session-info {
+
+    .connection-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       background: var(--surface);
-      border: 1px solid var(--border);
+      padding: 0.4rem 1.2rem 0.4rem 0.8rem;
       border-radius: 40px;
-      padding: 0.4rem 1.2rem;
+      border: 1px solid var(--border);
       font-size: 0.85rem;
       color: var(--text-secondary);
     }
-    .dashboard {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
     }
-    .dispute-card {
+
+    .dot.connected { background: var(--success); }
+
+    /* ---------- THREE‑COLUMN LAYOUT ---------- */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr 360px;
+      gap: 2rem;
+      flex: 1;
+    }
+
+    @media (max-width: 1200px) {
+      .main-grid { grid-template-columns: 1fr 360px; }
+      .left-sidebar { display: none; } /* would need a mobile menu */
+    }
+
+    /* LEFT SIDEBAR – DISPUTE LIST */
+    .left-sidebar {
       background: var(--surface);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       border: 1px solid var(--border);
       padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      height: fit-content;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .sidebar-header h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .dispute-list {
+      list-style: none;
+      margin-top: 1rem;
+    }
+
+    .dispute-list-item {
+      background: var(--surface-secondary);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-bottom: 0.8rem;
       cursor: pointer;
       transition: all 0.2s;
+      border: 1px solid var(--border);
     }
-    .dispute-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
+
+    .dispute-list-item:hover {
       border-color: var(--accent);
+      transform: translateX(4px);
     }
+
+    .dispute-list-item.active {
+      border-left: 4px solid var(--accent);
+      background: #e6f0ff;
+    }
+
+    .dispute-title {
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      font-size: 0.95rem;
+    }
+
+    .dispute-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* CENTER CHAT (unchanged from original) */
     .chat-panel {
       background: var(--surface);
       border-radius: var(--radius-lg);
       border: 1px solid var(--border);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
       height: 70vh;
       min-height: 550px;
+      box-shadow: var(--shadow-lg);
     }
+
     .chat-header {
       padding: 1.25rem 1.75rem;
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
+
+    .chat-header h2 {
+      font-size: 1rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
     .party-badge {
       background: var(--surface-secondary);
       padding: 0.25rem 1rem;
       border-radius: 40px;
       font-size: 0.8rem;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
     }
+
     .chat-messages {
       flex: 1;
       padding: 1.75rem;
@@ -154,47 +291,82 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      background: radial-gradient(circle at 0% 30%, rgba(37,99,235,0.02) 0%, transparent 50%);
     }
+
     .message {
       max-width: 70%;
       padding: 0.9rem 1.4rem;
       border-radius: 28px;
       line-height: 1.5;
+      font-size: 0.95rem;
+      animation: fadeIn 0.3s ease;
       word-wrap: break-word;
     }
+
     .message.user {
       align-self: flex-end;
       background: var(--accent);
       color: white;
       border-bottom-right-radius: 6px;
     }
+
     .message.bot {
       align-self: flex-start;
       background: var(--surface-secondary);
-      border: 1px solid var(--border);
+      color: var(--text-primary);
       border-bottom-left-radius: 6px;
+      border: 1px solid var(--border);
     }
+
     .message.system {
       align-self: center;
       background: transparent;
       color: var(--text-muted);
       font-style: italic;
+      max-width: 90%;
       border: 1px dashed var(--border);
     }
+
+    .message.attachment {
+      align-self: flex-start;
+      background: var(--surface-secondary);
+      border-left: 4px solid var(--accent);
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+
     .chat-input-area {
       display: flex;
       padding: 1.25rem 1.75rem;
+      background: var(--surface);
       border-top: 1px solid var(--border);
       gap: 0.8rem;
+      flex-wrap: wrap;
     }
+
     .chat-input-area input {
-      flex: 1;
+      flex: 1 1 200px;
       background: var(--surface-secondary);
       border: 1px solid var(--border);
       border-radius: 48px;
       padding: 0.9rem 1.4rem;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      transition: all 0.2s;
     }
-    .chat-input-area input:focus { outline: none; border-color: var(--accent); }
+
+    .chat-input-area input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .chat-input-area input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .chat-input-area button {
       background: var(--accent);
       color: white;
@@ -203,31 +375,99 @@
       padding: 0 2rem;
       font-weight: 500;
       cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid var(--accent);
     }
+
+    .chat-input-area button:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+
+    .chat-input-area button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .attach-btn {
       background: var(--surface-secondary);
       border: 1px solid var(--border);
       border-radius: 48px;
       padding: 0.9rem 1.4rem;
       cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
     }
+
+    .attach-btn:hover {
+      background: #e5e9f0;
+    }
+
+    /* RIGHT PANEL (unchanged) */
     .right-panel {
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
     }
+
     .card {
       background: var(--surface);
       border-radius: var(--radius-md);
       border: 1px solid var(--border);
       padding: 1.5rem;
+      box-shadow: var(--shadow-md);
     }
+
     .card h3 {
       font-size: 0.85rem;
       text-transform: uppercase;
+      letter-spacing: 0.05em;
       color: var(--text-muted);
       margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
+
+    .consent-box {
+      background: var(--surface-secondary);
+      border-radius: var(--radius-sm);
+      padding: 1.2rem;
+      border-left: 3px solid var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .consent-box p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    .share-link {
+      background: var(--surface-secondary);
+      padding: 0.8rem 1rem;
+      border-radius: var(--radius-sm);
+      font-family: monospace;
+      font-size: 0.8rem;
+      word-break: break-all;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .options-list {
+      list-style: none;
+      margin: 1rem 0;
+    }
+
     .options-list li {
       background: var(--surface-secondary);
       border-radius: var(--radius-sm);
@@ -235,14 +475,67 @@
       margin-bottom: 0.6rem;
       border-left: 4px solid transparent;
       cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
     }
-    .options-list li.selected { border-left-color: var(--success); background: #e6f7ec; }
+
+    .options-list li:hover {
+      border-left-color: var(--accent);
+      background: #eef2f6;
+    }
+
+    .options-list li.selected {
+      border-left-color: var(--success);
+      background: #e6f7ec;
+    }
+
+    .agreement-preview {
+      background: var(--surface-secondary);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      border: 1px solid var(--border);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .attachment-list {
+      margin-top: 1rem;
+    }
+
+    .attachment-item {
+      background: var(--surface-secondary);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     footer {
       margin-top: 3rem;
       text-align: center;
       color: var(--text-muted);
+      font-size: 0.8rem;
       border-top: 1px solid var(--border);
       padding-top: 2rem;
+    }
+
+    .n3x-ascii {
+      font-family: monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-top: 1rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -254,55 +547,59 @@
         <span class="logo-text">AURUM</span>
         <span class="logo-tag">n3x // dispute resolution</span>
       </div>
-      <div class="session-info" id="sessionDisplay">
-        Session: <span id="sessionIdDisplay">new</span>
+      <div class="connection-indicator" id="connectionIndicator">
+        <span class="dot"></span>
+        <span>connected</span>
       </div>
     </header>
 
-    <!-- DASHBOARD (shown initially) -->
-    <div id="dashboardScreen">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-        <h2>Your disputes</h2>
-        <button class="btn btn-primary" id="newDisputeBtn">➕ New Dispute</button>
+    <div class="main-grid">
+      <!-- LEFT SIDEBAR: DISPUTE LIST -->
+      <div class="left-sidebar">
+        <div class="sidebar-header">
+          <h3>⚡ your disputes</h3>
+          <button class="btn btn-primary" id="newDisputeBtn" style="padding:0.4rem 1rem;">➕ New</button>
+        </div>
+        <div id="disputeListContainer" class="dispute-list">
+          <!-- populated dynamically -->
+        </div>
       </div>
-      <div id="disputesList" class="dashboard"></div>
-    </div>
 
-    <!-- DISPUTE SCREEN -->
-    <div id="disputeScreen" class="main-grid hidden">
-      <!-- LEFT CHAT -->
+      <!-- CENTER: CHAT PANEL (exactly as before) -->
       <div class="chat-panel">
         <div class="chat-header">
           <h2>⚡ Negotiation channel</h2>
-          <span class="party-badge" id="chatPartyBadge">Party A</span>
+          <span class="party-badge" id="partyBadge">Party A</span>
         </div>
-        <div class="chat-messages" id="chatMessages"></div>
-        <div class="chat-input-area">
-          <input type="text" id="messageInput" placeholder="Type a message...">
+        <div class="chat-messages" id="chatMessages">
+          <div class="message system">Welcome to AURUM. Both parties must consent before negotiation begins.</div>
+        </div>
+        <div class="chat-input-area" id="chatInputArea">
+          <input type="text" id="messageInput" placeholder="Type a message..." disabled>
           <span class="attach-btn" id="attachButton">📎 Attach</span>
-          <input type="file" id="fileInput" style="display:none;" multiple>
-          <button id="sendButton">Send</button>
+          <input type="file" id="fileInput" style="display: none;" multiple>
+          <button id="sendButton" disabled>Send</button>
         </div>
       </div>
 
-      <!-- RIGHT SIDEBAR -->
+      <!-- RIGHT PANEL (all original cards) -->
       <div class="right-panel">
-        <!-- Consent card (shown for Party B when needed) -->
-        <div class="card hidden" id="consentCard">
-          <h3>🔐 consent required</h3>
-          <div style="background:var(--surface-secondary); border-radius:var(--radius-sm); padding:1.2rem; border-left:3px solid var(--accent);">
-            <p style="color:var(--text-secondary); margin-bottom:1.2rem;">You have been invited as Party B. By consenting, you agree to participate in AI‑assisted negotiation.</p>
-            <div style="display:flex; gap:0.8rem;">
-              <button class="btn btn-primary" id="partyBConsentBtn">I consent</button>
-              <button class="btn btn-outline" id="partyBDeclineBtn">Decline</button>
+        <!-- Consent card -->
+        <div class="card" id="consentCard">
+          <h3>🔐 informed consent</h3>
+          <div class="consent-box">
+            <p>AURUM is an AI assistant, not a lawyer or mediator. It does not provide legal advice. Conversations are confidential and stored only with your consent. You may delete your data at any time.</p>
+            <div class="button-group">
+              <button class="btn btn-primary" id="consentBtn">I consent</button>
+              <button class="btn btn-outline" id="declineBtn">I do not consent</button>
             </div>
           </div>
         </div>
 
-        <!-- Intake card (Party A after consent) -->
+        <!-- Dispute intake -->
         <div class="card hidden" id="intakeCard">
           <h3>📋 describe the dispute</h3>
-          <textarea id="disputeInput" rows="4" style="width:100%; background:var(--surface-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.8rem; margin-bottom:1rem;" placeholder="e.g., Landlord refuses to return $800 deposit..."></textarea>
+          <textarea id="disputeInput" rows="4" style="width:100%; background:var(--surface-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.8rem; color:var(--text-primary); margin-bottom:1rem; font-family:inherit;" placeholder="e.g., Landlord refuses to return $800 deposit..."></textarea>
           <button class="btn btn-primary" id="classifyBtn">analyze dispute</button>
         </div>
 
@@ -317,13 +614,15 @@
         <div class="card hidden" id="shareCard">
           <h3>🔗 invite other party</h3>
           <div class="share-link" id="shareLink">generating...</div>
-          <button class="btn btn-outline" id="copyLinkBtn" style="margin-top:1rem;">copy link</button>
+          <div class="button-group" style="margin-top:1rem;">
+            <button class="btn btn-outline" id="copyLinkBtn">copy link</button>
+          </div>
         </div>
 
-        <!-- Negotiation tools (both consented) -->
+        <!-- Negotiation tools -->
         <div class="card hidden" id="negotiationCard">
           <h3>⚙️ negotiation tools</h3>
-          <div class="button-group" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <div class="button-group">
             <button class="btn btn-outline" id="getOptionsBtn">generate options</button>
             <button class="btn btn-outline" id="generateAgreementBtn">create settlement</button>
           </div>
@@ -332,25 +631,27 @@
           <div id="attachmentsContainer" class="attachment-list"></div>
           <hr style="border-color:var(--border); margin:1.5rem 0;">
           <button class="btn btn-outline" id="deleteDataBtn" style="color:var(--danger);">delete my data</button>
-          <button class="btn btn-outline" id="backToDashboardBtn" style="margin-top:1rem;">← Back to dashboard</button>
         </div>
 
         <!-- Party status -->
         <div class="card">
           <h3>👥 parties</h3>
-          <div style="display:flex; justify-content:space-between;">
-            <span>Party A: <span id="partyAStatus"></span></span>
-            <span>Party B: <span id="partyBStatus"></span></span>
+          <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+            <span>Party A: <span id="partyAStatus" style="color:var(--text-muted);">pending</span></span>
+            <span>Party B: <span id="partyBStatus" style="color:var(--text-muted);">pending</span></span>
           </div>
         </div>
+
         <div class="n3x-ascii" style="text-align:center;">---[ n3x · lex ]---</div>
       </div>
     </div>
 
-    <footer>© 2026 AURUM · AI‑assisted early dispute resolution</footer>
+    <footer>
+      <span>© 2026 AURUM · AI‑assisted early dispute resolution</span>
+    </footer>
   </div>
 
-  <!-- Firebase SDKs (Firestore only) -->
+  <!-- Firebase & Groq config – same keys -->
   <script type="importmap">
     {
       "imports": {
@@ -382,7 +683,7 @@
     const app = initializeApp(FIREBASE_CONFIG);
     const db = getFirestore(app);
 
-    // ---------- SESSION MANAGEMENT ----------
+    // ---------- SESSION ID ----------
     function getSessionId() {
       let sid = localStorage.getItem('sessionId');
       if (!sid) {
@@ -392,26 +693,23 @@
       return sid;
     }
     const sessionId = getSessionId();
-    document.getElementById('sessionIdDisplay').textContent = sessionId.substring(0,8) + '…';
 
     // ---------- UI Elements ----------
-    const dashboardScreen = document.getElementById('dashboardScreen');
-    const disputeScreen = document.getElementById('disputeScreen');
+    // left sidebar
+    const disputeListContainer = document.getElementById('disputeListContainer');
     const newDisputeBtn = document.getElementById('newDisputeBtn');
-    const disputesList = document.getElementById('disputesList');
-    const backToDashboardBtn = document.getElementById('backToDashboardBtn');
-    const consentCard = document.getElementById('consentCard');
-    const partyBConsentBtn = document.getElementById('partyBConsentBtn');
-    const partyBDeclineBtn = document.getElementById('partyBDeclineBtn');
 
+    // center chat
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
     const attachButton = document.getElementById('attachButton');
     const fileInput = document.getElementById('fileInput');
-    const chatPartyBadge = document.getElementById('chatPartyBadge');
-    const partyAStatus = document.getElementById('partyAStatus');
-    const partyBStatus = document.getElementById('partyBStatus');
+    const partyBadge = document.getElementById('partyBadge');
+    const connectionIndicator = document.getElementById('connectionIndicator');
+
+    // right panel
+    const consentCard = document.getElementById('consentCard');
     const intakeCard = document.getElementById('intakeCard');
     const classificationCard = document.getElementById('classificationCard');
     const shareCard = document.getElementById('shareCard');
@@ -428,138 +726,163 @@
     const agreementContainer = document.getElementById('agreementContainer');
     const attachmentsContainer = document.getElementById('attachmentsContainer');
     const deleteDataBtn = document.getElementById('deleteDataBtn');
+    const partyAStatus = document.getElementById('partyAStatus');
+    const partyBStatus = document.getElementById('partyBStatus');
 
     // ---------- Global state ----------
     let currentDisputeId = null;
     let currentDisputeRef = null;
+    let currentParty = null; // 'A' or 'B'
     let unsubscribeDispute = null;
     let unsubscribeMessages = null;
     let urlParams = new URLSearchParams(window.location.search);
     let invitedDisputeId = urlParams.get('dispute');
-    let invitedParty = urlParams.get('party'); // may be B
+    let invitedParty = urlParams.get('party');
 
-    // ---------- Load dashboard on start ----------
-    function showDashboard() {
-      dashboardScreen.classList.remove('hidden');
-      disputeScreen.classList.add('hidden');
-      if (unsubscribeDispute) unsubscribeDispute();
-      if (unsubscribeMessages) unsubscribeMessages();
-      loadDisputes();
+    // ---------- Helper: add message to chat ----------
+    function addMessageToChat(sender, text, isAttachment = false) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}${isAttachment ? ' attachment' : ''}`;
+      msgDiv.textContent = text;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    async function loadDisputes() {
+    // ---------- Helper: store message in Firestore ----------
+    async function addMessageToFirestore(sender, text, isAttachment = false) {
+      if (!currentDisputeRef) return;
+      const msgRef = collection(db, 'disputes', currentDisputeId, 'messages');
+      await addDoc(msgRef, {
+        sender,
+        text,
+        timestamp: serverTimestamp(),
+        party: currentParty,
+        type: isAttachment ? 'attachment' : 'text'
+      });
+    }
+
+    // ---------- Load disputes for sidebar ----------
+    async function loadDisputeList() {
       const q = query(collection(db, 'disputes'), where('partyA.sessionId', '==', sessionId));
       const q2 = query(collection(db, 'disputes'), where('partyB.sessionId', '==', sessionId));
       const [snapA, snapB] = await Promise.all([getDocs(q), getDocs(q2)]);
       const disputes = [...snapA.docs, ...snapB.docs].map(doc => ({ id: doc.id, ...doc.data() }));
-      renderDisputes(disputes);
+      renderDisputeList(disputes);
     }
 
-    function renderDisputes(disputes) {
-      disputesList.innerHTML = '';
-      if (disputes.length === 0) {
-        disputesList.innerHTML = '<p style="color:var(--text-muted);">No disputes yet. Start a new one.</p>';
-        return;
-      }
+    function renderDisputeList(disputes) {
+      disputeListContainer.innerHTML = '';
       disputes.forEach(d => {
-        const card = document.createElement('div');
-        card.className = 'dispute-card';
-        card.innerHTML = `
-          <div style="display:flex; justify-content:space-between;">
-            <span style="font-weight:600;">${d.disputeText?.substring(0,50) || 'Untitled'}...</span>
-            <span style="color:var(--text-muted);">${d.partyA?.sessionId === sessionId ? 'Party A' : 'Party B'}</span>
-          </div>
-          <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-muted);">
-            Status: ${d.partyA?.consented && d.partyB?.consented ? 'Both consented' : 'Pending consent'}
+        const div = document.createElement('div');
+        div.className = `dispute-list-item ${d.id === currentDisputeId ? 'active' : ''}`;
+        // Use title if available, else generate placeholder
+        const title = d.title || (d.disputeText ? d.disputeText.substring(0,40) + '…' : 'Untitled dispute');
+        const yourRole = d.partyA?.sessionId === sessionId ? 'Party A' : 'Party B';
+        const status = d.partyA?.consented && d.partyB?.consented ? '🟢 active' : '⏳ pending';
+        div.innerHTML = `
+          <div class="dispute-title">${title}</div>
+          <div class="dispute-meta">
+            <span>${yourRole}</span>
+            <span>${status}</span>
           </div>
         `;
-        card.addEventListener('click', () => {
+        div.addEventListener('click', () => {
           const party = d.partyA?.sessionId === sessionId ? 'A' : 'B';
           loadDispute(d.id, party);
         });
-        disputesList.appendChild(card);
+        disputeListContainer.appendChild(div);
       });
     }
 
-    // ---------- New Dispute ----------
-    newDisputeBtn.addEventListener('click', async () => {
-      const id = crypto.randomUUID();
-      const ref = doc(db, 'disputes', id);
-      const disputeData = {
-        createdAt: serverTimestamp(),
-        status: 'intake',
-        partyA: { sessionId: sessionId, consented: true },
-        partyB: { sessionId: null, consented: false },
-        disputeText: '',
-        classification: null,
-        statements: [],
-        options: [],
-        selectedOption: null,
-        settlementText: '',
-        attachments: []
-      };
-      await setDoc(ref, disputeData);
-      window.history.pushState({}, '', `?dispute=${id}&party=A`);
-      loadDispute(id, 'A');
-    });
-
-    // ---------- Load a dispute ----------
+    // ---------- Load a specific dispute ----------
     async function loadDispute(disputeId, party) {
-      currentDisputeId = disputeId;
-      currentDisputeRef = doc(db, 'disputes', disputeId);
-      dashboardScreen.classList.add('hidden');
-      disputeScreen.classList.remove('hidden');
-      chatPartyBadge.textContent = `Party ${party}`;
-
-      // Verify session match (simple warning)
-      const snap = await getDoc(currentDisputeRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        if (party === 'A' && data.partyA.sessionId && data.partyA.sessionId !== sessionId) {
-          alert('This dispute is associated with a different browser session for Party A. Using incognito or another browser?');
-        } else if (party === 'B' && data.partyB.sessionId && data.partyB.sessionId !== sessionId) {
-          alert('This dispute link is for Party B but was already claimed by another session. Continuing may confuse the other party.');
-        }
-      }
-
+      // Clean up previous listeners
       if (unsubscribeDispute) unsubscribeDispute();
+      if (unsubscribeMessages) unsubscribeMessages();
+
+      currentDisputeId = disputeId;
+      currentParty = party;
+      currentDisputeRef = doc(db, 'disputes', disputeId);
+      partyBadge.textContent = `Party ${party}`;
+
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('dispute', disputeId);
+      url.searchParams.set('party', party);
+      window.history.pushState({}, '', url);
+
+      // Listen to dispute document
       unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
-        updateDisputeUI(data, party);
+        updateUIFromDispute(data);
       });
 
+      // Listen to messages
       const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(50));
-      if (unsubscribeMessages) unsubscribeMessages();
       unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
-        chatMessages.innerHTML = '';
+        chatMessages.innerHTML = ''; // rebuild
         snap.forEach(doc => {
           const msg = doc.data();
           addMessageToChat(msg.sender, msg.text, msg.type === 'attachment');
         });
       });
+
+      // Refresh sidebar to highlight this dispute
+      loadDisputeList();
     }
 
-    function updateDisputeUI(data, currentParty) {
+    // ---------- Update UI based on dispute data ----------
+    function updateUIFromDispute(data) {
       partyAStatus.textContent = data.partyA?.consented ? '✅ consented' : '⏳ pending';
       partyBStatus.textContent = data.partyB?.consented ? '✅ consented' : '⏳ pending';
 
-      // Hide all cards first
-      intakeCard.classList.add('hidden');
-      classificationCard.classList.add('hidden');
-      shareCard.classList.add('hidden');
-      negotiationCard.classList.add('hidden');
-      consentCard.classList.add('hidden');
+      // Show attachments if any
+      if (data.attachments && data.attachments.length > 0) {
+        attachmentsContainer.innerHTML = '<h4 style="margin:0.5rem 0;">Attached documents:</h4>';
+        data.attachments.forEach((att, idx) => {
+          const div = document.createElement('div');
+          div.className = 'attachment-item';
+          div.innerHTML = `<span>📎 ${att.name} (${att.type})</span> <button class="btn btn-outline" style="padding:0.2rem 0.8rem;" data-attach="${idx}">view</button>`;
+          attachmentsContainer.appendChild(div);
+          div.querySelector('button').addEventListener('click', () => {
+            if (att.type.startsWith('text/') || att.name.endsWith('.txt')) {
+              const win = window.open();
+              win.document.write(`<pre>${atob(att.content)}</pre>`);
+            } else {
+              const a = document.createElement('a');
+              a.href = `data:${att.type};base64,${att.content}`;
+              a.download = att.name;
+              a.click();
+            }
+          });
+        });
+      } else {
+        attachmentsContainer.innerHTML = '';
+      }
 
-      if (!data.partyB?.consented && currentParty === 'B') {
-        // Party B hasn't consented – show consent card
+      // Card visibility logic (same as original)
+      if (!data.partyA?.consented && currentParty === 'A') {
         consentCard.classList.remove('hidden');
-      } else if (!data.classification && currentParty === 'A') {
-        // Party A, not yet classified
-        intakeCard.classList.remove('hidden');
+        intakeCard.classList.add('hidden');
+        classificationCard.classList.add('hidden');
+        shareCard.classList.add('hidden');
+        negotiationCard.classList.add('hidden');
+      } else if (!data.partyB?.consented && currentParty === 'B') {
+        consentCard.classList.remove('hidden');
+        intakeCard.classList.add('hidden');
+        classificationCard.classList.add('hidden');
+        shareCard.classList.add('hidden');
+        negotiationCard.classList.add('hidden');
+        if (data.disputeText && !document.querySelector('.message.system.dispute-summary')) {
+          addMessageToChat('system', `Dispute: ${data.disputeText}`);
+        }
       } else if (data.classification && (!data.partyB?.consented || currentParty === 'A')) {
         classificationCard.classList.remove('hidden');
         shareCard.classList.remove('hidden');
+        intakeCard.classList.add('hidden');
+        consentCard.classList.add('hidden');
+        negotiationCard.classList.add('hidden');
         classificationDisplay.innerHTML = `
           <p><strong>Domain:</strong> ${data.classification.domain}</p>
           <p><strong>Issues:</strong> ${data.classification.issues.join(', ')}</p>
@@ -568,6 +891,10 @@
         const shareUrl = `${window.location.origin}${window.location.pathname}?dispute=${currentDisputeId}&party=B`;
         shareLink.textContent = shareUrl;
       } else if (data.partyA?.consented && data.partyB?.consented) {
+        consentCard.classList.add('hidden');
+        intakeCard.classList.add('hidden');
+        classificationCard.classList.add('hidden');
+        shareCard.classList.add('hidden');
         negotiationCard.classList.remove('hidden');
         messageInput.disabled = false;
         sendButton.disabled = false;
@@ -582,59 +909,101 @@
           });
         }
         if (data.settlementText) {
-          agreementContainer.innerHTML = `<div style="background:var(--surface-secondary); padding:1rem; border-radius:var(--radius-sm); white-space:pre-wrap;">${data.settlementText}</div>`;
-        }
-        // Show attachments
-        if (data.attachments && data.attachments.length) {
-          attachmentsContainer.innerHTML = '<h4 style="margin:0.5rem 0;">Attached documents:</h4>';
-          data.attachments.forEach((att, idx) => {
-            const div = document.createElement('div');
-            div.className = 'attachment-item';
-            div.innerHTML = `<span>📎 ${att.name}</span> <button class="btn btn-outline" style="padding:0.2rem 0.8rem;" data-attach="${idx}">view</button>`;
-            attachmentsContainer.appendChild(div);
-            div.querySelector('button').addEventListener('click', () => {
-              if (att.type.startsWith('text/') || att.name.endsWith('.txt')) {
-                const win = window.open();
-                win.document.write(`<pre>${atob(att.content)}</pre>`);
-              } else {
-                const a = document.createElement('a');
-                a.href = `data:${att.type};base64,${att.content}`;
-                a.download = att.name;
-                a.click();
-              }
-            });
-          });
-        } else {
-          attachmentsContainer.innerHTML = '';
+          agreementContainer.innerHTML = `<div class="agreement-preview">${data.settlementText}</div>`;
         }
       }
     }
 
-    function addMessageToChat(sender, text, isAttachment = false) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
-      if (isAttachment) msgDiv.classList.add('attachment');
-      msgDiv.textContent = text;
-      chatMessages.appendChild(msgDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+    // ---------- Event Handlers ----------
+    document.getElementById('consentBtn').addEventListener('click', async () => {
+      if (!currentDisputeId) {
+        // This case should not happen because consent creates dispute
+        return;
+      }
+      // Record consent for current party
+      if (currentParty === 'A') {
+        await updateDoc(currentDisputeRef, { 'partyA.consented': true });
+      } else {
+        await updateDoc(currentDisputeRef, { 'partyB.consented': true, 'partyB.sessionId': sessionId });
+      }
+    });
 
-    // ---------- Party B Consent ----------
-    partyBConsentBtn.addEventListener('click', async () => {
-      if (!currentDisputeRef) return;
-      await updateDoc(currentDisputeRef, {
-        'partyB.sessionId': sessionId,
-        'partyB.consented': true
-      });
+    document.getElementById('declineBtn').addEventListener('click', () => {
+      addMessageToChat('system', 'Consent declined. Cannot proceed without consent.');
       consentCard.classList.add('hidden');
     });
 
-    partyBDeclineBtn.addEventListener('click', () => {
-      alert('You declined consent. You can close this tab.');
-      showDashboard();
+    document.getElementById('classifyBtn').addEventListener('click', async () => {
+      const text = disputeInput.value.trim();
+      if (!text) return;
+      const classification = await callGroqClassification(text);
+      // Also generate a short title for the dispute
+      const title = await generateTitle(text);
+      await updateDoc(currentDisputeRef, { disputeText: text, classification, title });
     });
 
-    // ---------- Message Sending ----------
+    document.getElementById('proceedBtn').addEventListener('click', () => {
+      // share card already visible
+    });
+
+    document.getElementById('copyLinkBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(shareLink.textContent);
+      alert('Link copied to clipboard');
+    });
+
+    document.getElementById('getOptionsBtn').addEventListener('click', async () => {
+      const snap = await getDoc(currentDisputeRef);
+      const data = snap.data();
+      const options = await callGroqOptions(data.disputeText, data.statements);
+      await updateDoc(currentDisputeRef, { options });
+    });
+
+    async function selectOption(index) {
+      await updateDoc(currentDisputeRef, { selectedOption: index });
+    }
+
+    document.getElementById('generateAgreementBtn').addEventListener('click', async () => {
+      const snap = await getDoc(currentDisputeRef);
+      const data = snap.data();
+      if (!data.options || data.selectedOption === null) {
+        alert('Please generate and select an option first');
+        return;
+      }
+      const agreement = await callGroqAgreement(data.disputeText, data.options[data.selectedOption].description);
+      await updateDoc(currentDisputeRef, { settlementText: agreement });
+    });
+
+    document.getElementById('deleteDataBtn').addEventListener('click', async () => {
+      if (confirm('Delete all data for this dispute? This cannot be undone.')) {
+        await updateDoc(currentDisputeRef, { deleted: true });
+        // redirect to base
+        window.location.href = window.location.pathname;
+      }
+    });
+
+    // File attachment
+    attachButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      if (!currentDisputeRef) {
+        alert('Please start a dispute first');
+        return;
+      }
+      const files = Array.from(e.target.files);
+      for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          const base64 = ev.target.result.split(',')[1];
+          const attachment = { name: file.name, type: file.type, content: base64, size: file.size };
+          await updateDoc(currentDisputeRef, { attachments: arrayUnion(attachment) });
+          addMessageToChat('user', `📎 Attached: ${file.name}`, true);
+          addMessageToFirestore('user', `📎 Attached: ${file.name}`, true);
+        };
+        reader.readAsDataURL(file);
+      }
+      fileInput.value = '';
+    });
+
+    // Send message (using Groq instead of Serena)
     sendButton.addEventListener('click', sendMessage);
     messageInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') sendMessage();
@@ -642,25 +1011,23 @@
 
     async function sendMessage() {
       const text = messageInput.value.trim();
-      if (!text || !currentDisputeRef) return;
-      messageInput.value = '';
-
+      if (!text) return;
       addMessageToChat('user', text);
-      const msgRef = collection(db, 'disputes', currentDisputeId, 'messages');
-      await addDoc(msgRef, {
-        sender: 'user',
-        text,
-        timestamp: serverTimestamp(),
-        party: chatPartyBadge.textContent.split(' ')[1]
-      });
+      messageInput.value = '';
+      await addMessageToFirestore('user', text);
 
+      // Update statements
       await updateDoc(currentDisputeRef, {
-        statements: arrayUnion({ party: chatPartyBadge.textContent.split(' ')[1], text, timestamp: new Date().toISOString() })
+        statements: arrayUnion({ party: currentParty, text, timestamp: new Date().toISOString() })
       });
 
+      // Fetch last 20 messages for context
       const messagesQuery = query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20));
       const snap = await getDocs(messagesQuery);
-      const history = snap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
+      const history = snap.docs.map(d => {
+        const role = d.data().sender === 'user' ? 'user' : 'assistant';
+        return { role, content: d.data().text };
+      });
 
       const systemPrompt = 'You are an impartial AI mediator. Facilitate communication, ask clarifying questions, suggest constructive approaches. Never give legal advice. Be neutral and respectful.';
       const messages = [{ role: 'system', content: systemPrompt }, ...history];
@@ -684,66 +1051,28 @@
       });
     }
 
-    // ---------- File Attachment ----------
-    attachButton.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', async (e) => {
-      if (!currentDisputeRef) return;
-      const files = Array.from(e.target.files);
-      for (const file of files) {
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-          const base64 = ev.target.result.split(',')[1];
-          const attachment = { name: file.name, type: file.type, content: base64, size: file.size };
-          await updateDoc(currentDisputeRef, { attachments: arrayUnion(attachment) });
-          addMessageToChat('user', `📎 Attached: ${file.name}`, true);
-          await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
-            sender: 'user',
-            text: `📎 Attached: ${file.name}`,
-            timestamp: serverTimestamp(),
-            type: 'attachment'
-          });
-        };
-        reader.readAsDataURL(file);
-      }
-      fileInput.value = '';
+    // ---------- New Dispute ----------
+    newDisputeBtn.addEventListener('click', async () => {
+      const id = crypto.randomUUID();
+      const ref = doc(db, 'disputes', id);
+      const disputeData = {
+        createdAt: serverTimestamp(),
+        status: 'intake',
+        partyA: { sessionId: sessionId, consented: true },
+        partyB: { sessionId: null, consented: false },
+        disputeText: '',
+        classification: null,
+        statements: [],
+        options: [],
+        selectedOption: null,
+        settlementText: '',
+        attachments: []
+      };
+      await setDoc(ref, disputeData);
+      loadDispute(id, 'A');
     });
 
-    // ---------- Classification ----------
-    classifyBtn.addEventListener('click', async () => {
-      const text = disputeInput.value.trim();
-      if (!text) return;
-      const classification = await callGroqClassification(text);
-      await updateDoc(currentDisputeRef, { disputeText: text, classification });
-    });
-
-    proceedBtn.addEventListener('click', () => {
-      // Already visible
-    });
-
-    // ---------- Options & Agreement ----------
-    getOptionsBtn.addEventListener('click', async () => {
-      const snap = await getDoc(currentDisputeRef);
-      const data = snap.data();
-      const options = await callGroqOptions(data.disputeText, data.statements);
-      await updateDoc(currentDisputeRef, { options });
-    });
-
-    async function selectOption(index) {
-      await updateDoc(currentDisputeRef, { selectedOption: index });
-    }
-
-    generateAgreementBtn.addEventListener('click', async () => {
-      const snap = await getDoc(currentDisputeRef);
-      const data = snap.data();
-      if (!data.options || data.selectedOption === null) {
-        alert('Please generate and select an option first');
-        return;
-      }
-      const agreement = await callGroqAgreement(data.disputeText, data.options[data.selectedOption].description);
-      await updateDoc(currentDisputeRef, { settlementText: agreement });
-    });
-
-    // ---------- Groq API Helpers ----------
+    // ---------- Groq Helpers ----------
     async function callGroqClassification(text) {
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -760,6 +1089,24 @@
       });
       const data = await resp.json();
       return JSON.parse(data.choices[0].message.content);
+    }
+
+    async function generateTitle(text) {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages: [
+            { role: 'system', content: 'Generate a very short title (max 6 words) for this dispute. Only output the title, nothing else.' },
+            { role: 'user', content: text }
+          ],
+          temperature: 0.3,
+          max_tokens: 20
+        })
+      });
+      const data = await resp.json();
+      return data.choices[0].message.content.trim();
     }
 
     async function callGroqOptions(disputeText, statements) {
@@ -793,36 +1140,28 @@
       return data.choices[0].message.content;
     }
 
-    // ---------- Copy link ----------
-    copyLinkBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(shareLink.textContent);
-      alert('Link copied!');
-    });
+    // ---------- Initial load ----------
+    window.addEventListener('load', async () => {
+      // Show connection as always connected (no Serena)
+      const dot = connectionIndicator.querySelector('.dot');
+      dot.className = 'dot connected';
+      connectionIndicator.querySelector('span:last-child').textContent = 'connected';
 
-    // ---------- Delete data ----------
-    deleteDataBtn.addEventListener('click', async () => {
-      if (confirm('Delete all data for this dispute? This cannot be undone.')) {
-        await updateDoc(currentDisputeRef, { deleted: true });
-        showDashboard();
-      }
-    });
-
-    // ---------- Back to dashboard ----------
-    backToDashboardBtn.addEventListener('click', () => {
-      window.history.pushState({}, '', '/');
-      showDashboard();
-    });
-
-    // ---------- Handle invited dispute on load ----------
-    window.addEventListener('load', () => {
       if (invitedDisputeId) {
-        loadDispute(invitedDisputeId, invitedParty || 'A');
+        // open invited dispute
+        await loadDispute(invitedDisputeId, invitedParty || 'B');
       } else {
-        showDashboard();
+        // load dispute list and maybe first dispute?
+        await loadDisputeList();
+        // If there are disputes, you could load the first one, but we'll leave it empty.
+        // The user will click a dispute or start new.
+        consentCard.classList.remove('hidden'); // show consent for new?
+        // Actually, without a selected dispute, we show nothing? Let's hide all cards.
+        // We'll just show the list.
       }
     });
 
-    // ---------- PWA manifest (optional) ----------
+    // PWA manifest (unchanged)
     const manifest = {
       name: 'AURUM Dispute Mediator',
       short_name: 'AURUM',
