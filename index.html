@@ -178,9 +178,17 @@
       flex: 1;
     }
 
-    @media (max-width: 1200px) {
-      .main-grid { grid-template-columns: 1fr 360px; }
-      .left-sidebar { display: none; } /* would need a mobile menu */
+    /* Mobile responsiveness */
+    @media (max-width: 900px) {
+      .app { padding: 1rem; }
+      .main-grid { 
+        grid-template-columns: 1fr; 
+        gap: 1rem;
+      }
+      .left-sidebar { 
+        display: block; 
+        order: -1; 
+      }
     }
 
     /* LEFT SIDEBAR – DISPUTE LIST */
@@ -245,7 +253,7 @@
       color: var(--text-muted);
     }
 
-    /* CENTER CHAT (unchanged from original) */
+    /* CENTER CHAT (unchanged) */
     .chat-panel {
       background: var(--surface);
       border-radius: var(--radius-lg);
@@ -548,7 +556,7 @@
         <span class="logo-tag">n3x // dispute resolution</span>
       </div>
       <div class="connection-indicator" id="connectionIndicator">
-        <span class="dot"></span>
+        <span class="dot connected"></span>
         <span>connected</span>
       </div>
     </header>
@@ -565,14 +573,14 @@
         </div>
       </div>
 
-      <!-- CENTER: CHAT PANEL (exactly as before) -->
+      <!-- CENTER: CHAT PANEL -->
       <div class="chat-panel">
         <div class="chat-header">
           <h2>⚡ Negotiation channel</h2>
-          <span class="party-badge" id="partyBadge">Party A</span>
+          <span class="party-badge" id="partyBadge">—</span>
         </div>
         <div class="chat-messages" id="chatMessages">
-          <div class="message system">Welcome to AURUM. Both parties must consent before negotiation begins.</div>
+          <div class="message system">Welcome to AURUM. Start a new dispute or open an existing one.</div>
         </div>
         <div class="chat-input-area" id="chatInputArea">
           <input type="text" id="messageInput" placeholder="Type a message..." disabled>
@@ -582,7 +590,7 @@
         </div>
       </div>
 
-      <!-- RIGHT PANEL (all original cards) -->
+      <!-- RIGHT PANEL -->
       <div class="right-panel">
         <!-- Consent card -->
         <div class="card" id="consentCard">
@@ -637,8 +645,8 @@
         <div class="card">
           <h3>👥 parties</h3>
           <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
-            <span>Party A: <span id="partyAStatus" style="color:var(--text-muted);">pending</span></span>
-            <span>Party B: <span id="partyBStatus" style="color:var(--text-muted);">pending</span></span>
+            <span>Party A: <span id="partyAStatus" style="color:var(--text-muted);">—</span></span>
+            <span>Party B: <span id="partyBStatus" style="color:var(--text-muted);">—</span></span>
           </div>
         </div>
 
@@ -651,7 +659,7 @@
     </footer>
   </div>
 
-  <!-- Firebase & Groq config – same keys -->
+  <!-- Firebase & Groq config -->
   <script type="importmap">
     {
       "imports": {
@@ -680,8 +688,35 @@
     import { initializeApp } from 'firebase/app';
     import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
 
-    const app = initializeApp(FIREBASE_CONFIG);
-    const db = getFirestore(app);
+    let app, db;
+    try {
+      app = initializeApp(FIREBASE_CONFIG);
+      db = getFirestore(app);
+      console.log("Firebase ready");
+    } catch (e) {
+      console.warn("Firebase failed – using in‑memory mock");
+      // Simple mock for demo
+      window.mockDb = { disputes: {} };
+      db = {
+        doc: (path) => ({ id: path.split('/').pop() }),
+        getDoc: async (ref) => {
+          const data = window.mockDb.disputes[ref.id];
+          return { exists: () => !!data, data: () => data };
+        },
+        setDoc: async (ref, data) => { window.mockDb.disputes[ref.id] = data; },
+        updateDoc: async (ref, updates) => {
+          const id = ref.id;
+          if (window.mockDb.disputes[id]) {
+            Object.assign(window.mockDb.disputes[id], updates);
+          }
+        },
+        onSnapshot: (ref, cb) => {
+          cb({ exists: () => true, data: () => window.mockDb.disputes[ref.id] || {} });
+          return () => {};
+        },
+        collection: () => ({})
+      };
+    }
 
     // ---------- SESSION ID ----------
     function getSessionId() {
@@ -706,7 +741,6 @@
     const attachButton = document.getElementById('attachButton');
     const fileInput = document.getElementById('fileInput');
     const partyBadge = document.getElementById('partyBadge');
-    const connectionIndicator = document.getElementById('connectionIndicator');
 
     // right panel
     const consentCard = document.getElementById('consentCard');
@@ -775,7 +809,6 @@
       disputes.forEach(d => {
         const div = document.createElement('div');
         div.className = `dispute-list-item ${d.id === currentDisputeId ? 'active' : ''}`;
-        // Use title if available, else generate placeholder
         const title = d.title || (d.disputeText ? d.disputeText.substring(0,40) + '…' : 'Untitled dispute');
         const yourRole = d.partyA?.sessionId === sessionId ? 'Party A' : 'Party B';
         const status = d.partyA?.consented && d.partyB?.consented ? '🟢 active' : '⏳ pending';
@@ -861,7 +894,7 @@
         attachmentsContainer.innerHTML = '';
       }
 
-      // Card visibility logic (same as original)
+      // Card visibility logic
       if (!data.partyA?.consented && currentParty === 'A') {
         consentCard.classList.remove('hidden');
         intakeCard.classList.add('hidden');
@@ -917,14 +950,31 @@
     // ---------- Event Handlers ----------
     document.getElementById('consentBtn').addEventListener('click', async () => {
       if (!currentDisputeId) {
-        // This case should not happen because consent creates dispute
-        return;
-      }
-      // Record consent for current party
-      if (currentParty === 'A') {
-        await updateDoc(currentDisputeRef, { 'partyA.consented': true });
+        // No dispute yet – create one (user is initiating as Party A)
+        const id = crypto.randomUUID();
+        const ref = doc(db, 'disputes', id);
+        const disputeData = {
+          createdAt: serverTimestamp(),
+          status: 'intake',
+          partyA: { sessionId: sessionId, consented: true },
+          partyB: { sessionId: null, consented: false },
+          disputeText: '',
+          classification: null,
+          statements: [],
+          options: [],
+          selectedOption: null,
+          settlementText: '',
+          attachments: []
+        };
+        await setDoc(ref, disputeData);
+        loadDispute(id, 'A');
       } else {
-        await updateDoc(currentDisputeRef, { 'partyB.consented': true, 'partyB.sessionId': sessionId });
+        // Existing dispute – record consent for current party
+        if (currentParty === 'A') {
+          await updateDoc(currentDisputeRef, { 'partyA.consented': true });
+        } else {
+          await updateDoc(currentDisputeRef, { 'partyB.consented': true, 'partyB.sessionId': sessionId });
+        }
       }
     });
 
@@ -1003,7 +1053,7 @@
       fileInput.value = '';
     });
 
-    // Send message (using Groq instead of Serena)
+    // Send message (using Groq)
     sendButton.addEventListener('click', sendMessage);
     messageInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') sendMessage();
@@ -1142,22 +1192,19 @@
 
     // ---------- Initial load ----------
     window.addEventListener('load', async () => {
-      // Show connection as always connected (no Serena)
-      const dot = connectionIndicator.querySelector('.dot');
-      dot.className = 'dot connected';
-      connectionIndicator.querySelector('span:last-child').textContent = 'connected';
-
       if (invitedDisputeId) {
         // open invited dispute
         await loadDispute(invitedDisputeId, invitedParty || 'B');
       } else {
-        // load dispute list and maybe first dispute?
+        // load dispute list
         await loadDisputeList();
-        // If there are disputes, you could load the first one, but we'll leave it empty.
-        // The user will click a dispute or start new.
-        consentCard.classList.remove('hidden'); // show consent for new?
-        // Actually, without a selected dispute, we show nothing? Let's hide all cards.
-        // We'll just show the list.
+        // Hide all cards initially
+        consentCard.classList.add('hidden');
+        intakeCard.classList.add('hidden');
+        classificationCard.classList.add('hidden');
+        shareCard.classList.add('hidden');
+        negotiationCard.classList.add('hidden');
+        // Show a welcome message
       }
     });
 
