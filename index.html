@@ -1,12 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>AURUM · AI‑assisted dispute resolution</title>
-  <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232A2A2A'/%3E%3Cpath d='M30 35 L70 35 L70 65 L30 65 Z' fill='none' stroke='%23E0E0E0' stroke-width='4'/%3E%3Ctext x='32' y='68' font-size='44' fill='%23E0E0E0' font-family='Arial'%3E⚖️%3C/text%3E%3C/svg%3E">
+  <title>AURUM · Algorithmic Mediation Prototype</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232A2A2A'/%3E%3Cpath d='M30 35 L70 35 L70 65 L30 65 Z' fill='none' stroke='%23E0E0E0' stroke-width='4'/%3E%3Ctext x='32' y='68' font-size='44' fill='%23E0E0E0' font-family='Arial'%3E⚖️%3C/text%3E%3C/svg%3E">
   <style>
-    /* ---------- RESET & PREMIUM VARIABLES ---------- */
     * {
       margin: 0;
       padding: 0;
@@ -45,7 +45,6 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      -webkit-font-smoothing: antialiased;
     }
 
     .hidden { display: none !important; }
@@ -67,38 +66,13 @@
       box-shadow: var(--shadow-sm);
     }
 
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
-
-    .btn-primary:hover {
-      background: #1d4ed8;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 16px -4px var(--accent-glow);
-    }
-
-    .btn-outline {
-      background: transparent;
-      border-color: var(--border);
-      color: var(--text-secondary);
-    }
-
-    .btn-outline:hover {
-      background: var(--surface-secondary);
-      border-color: var(--text-muted);
-    }
-
-    .btn-success {
-      background: var(--success);
-      color: white;
-      border-color: var(--success);
-    }
-
-    .btn-success:hover {
-      background: #059669;
-    }
+    .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+    .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 8px 16px -4px var(--accent-glow); }
+    .btn-outline { background: transparent; border-color: var(--border); color: var(--text-secondary); }
+    .btn-outline:hover { background: var(--surface-secondary); border-color: var(--text-muted); }
+    .btn-success { background: var(--success); color: white; border-color: var(--success); }
+    .btn-warning { background: var(--warning); color: white; border-color: var(--warning); }
+    .btn-danger { background: var(--danger); color: white; border-color: var(--danger); }
 
     .app {
       max-width: 1800px;
@@ -117,81 +91,28 @@
       margin-bottom: 2rem;
       padding-bottom: 1rem;
       border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
-    .logo-block {
-      display: flex;
-      align-items: baseline;
-      gap: 0.5rem;
-    }
+    .logo-block { display: flex; align-items: baseline; gap: 0.5rem; }
+    .logo-icon { font-size: 2rem; }
+    .logo-text { font-size: 1.6rem; font-weight: 350; font-family: var(--font-serif); letter-spacing: -0.02em; }
+    .logo-tag { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); background: var(--surface-secondary); padding: 0.2rem 0.6rem; border-radius: 40px; }
 
-    .logo-icon {
-      font-size: 2rem;
-      line-height: 1;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
-    }
-
-    .logo-text {
-      font-size: 1.6rem;
-      font-weight: 350;
-      font-family: var(--font-serif);
-      letter-spacing: -0.02em;
-      color: var(--text-primary);
-    }
-
-    .logo-tag {
-      font-family: monospace;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      background: var(--surface-secondary);
-      padding: 0.2rem 0.6rem;
-      border-radius: 40px;
-      margin-left: 0.5rem;
-    }
-
-    .connection-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: var(--surface);
-      padding: 0.4rem 1.2rem 0.4rem 0.8rem;
-      border-radius: 40px;
-      border: 1px solid var(--border);
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--warning);
-    }
-
-    .dot.connected { background: var(--success); }
-
-    /* ---------- THREE‑COLUMN LAYOUT ---------- */
     .main-grid {
       display: grid;
       grid-template-columns: 280px 1fr 360px;
       gap: 2rem;
       flex: 1;
     }
-
-    /* Mobile responsiveness */
     @media (max-width: 900px) {
       .app { padding: 1rem; }
-      .main-grid { 
-        grid-template-columns: 1fr; 
-        gap: 1rem;
-      }
-      .left-sidebar { 
-        display: block; 
-        order: -1; 
-      }
+      .main-grid { grid-template-columns: 1fr; gap: 1rem; }
+      .left-sidebar { order: -1; }
     }
 
-    /* LEFT SIDEBAR – DISPUTE LIST */
+    /* left sidebar */
     .left-sidebar {
       background: var(--surface);
       border-radius: var(--radius-lg);
@@ -200,26 +121,8 @@
       box-shadow: var(--shadow-md);
       height: fit-content;
     }
-
-    .sidebar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .sidebar-header h3 {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      letter-spacing: 0.05em;
-    }
-
-    .dispute-list {
-      list-style: none;
-      margin-top: 1rem;
-    }
-
+    .sidebar-header { display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
+    .sidebar-header h3 { font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); }
     .dispute-list-item {
       background: var(--surface-secondary);
       border-radius: var(--radius-md);
@@ -229,31 +132,11 @@
       transition: all 0.2s;
       border: 1px solid var(--border);
     }
+    .dispute-list-item.active { border-left: 4px solid var(--accent); background: #e6f0ff; }
+    .dispute-title { font-weight: 600; margin-bottom: 0.3rem; font-size: 0.95rem; }
+    .dispute-meta { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); }
 
-    .dispute-list-item:hover {
-      border-color: var(--accent);
-      transform: translateX(4px);
-    }
-
-    .dispute-list-item.active {
-      border-left: 4px solid var(--accent);
-      background: #e6f0ff;
-    }
-
-    .dispute-title {
-      font-weight: 600;
-      margin-bottom: 0.3rem;
-      font-size: 0.95rem;
-    }
-
-    .dispute-meta {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    /* CENTER CHAT (unchanged) */
+    /* chat panel */
     .chat-panel {
       background: var(--surface);
       border-radius: var(--radius-lg);
@@ -265,33 +148,7 @@
       min-height: 550px;
       box-shadow: var(--shadow-lg);
     }
-
-    .chat-header {
-      padding: 1.25rem 1.75rem;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .chat-header h2 {
-      font-size: 1rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-
-    .party-badge {
-      background: var(--surface-secondary);
-      padding: 0.25rem 1rem;
-      border-radius: 40px;
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-    }
-
+    .chat-header { padding: 1.25rem 1.75rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
     .chat-messages {
       flex: 1;
       padding: 1.75rem;
@@ -299,127 +156,25 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      background: radial-gradient(circle at 0% 30%, rgba(37,99,235,0.02) 0%, transparent 50%);
     }
-
     .message {
       max-width: 70%;
       padding: 0.9rem 1.4rem;
       border-radius: 28px;
       line-height: 1.5;
       font-size: 0.95rem;
-      animation: fadeIn 0.3s ease;
       word-wrap: break-word;
     }
+    .message.user { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 6px; }
+    .message.bot { align-self: flex-start; background: var(--surface-secondary); border-bottom-left-radius: 6px; border: 1px solid var(--border); }
+    .message.system { align-self: center; background: transparent; color: var(--text-muted); font-style: italic; max-width: 90%; border: 1px dashed var(--border); }
+    .chat-input-area { display: flex; padding: 1.25rem 1.75rem; gap: 0.8rem; border-top: 1px solid var(--border); }
+    .chat-input-area input { flex: 1; background: var(--surface-secondary); border: 1px solid var(--border); border-radius: 48px; padding: 0.9rem 1.4rem; }
+    .chat-input-area button { background: var(--accent); color: white; border: none; border-radius: 48px; padding: 0 2rem; cursor: pointer; }
+    .attach-btn { background: var(--surface-secondary); border: 1px solid var(--border); border-radius: 48px; padding: 0.9rem 1.4rem; cursor: pointer; }
 
-    .message.user {
-      align-self: flex-end;
-      background: var(--accent);
-      color: white;
-      border-bottom-right-radius: 6px;
-    }
-
-    .message.bot {
-      align-self: flex-start;
-      background: var(--surface-secondary);
-      color: var(--text-primary);
-      border-bottom-left-radius: 6px;
-      border: 1px solid var(--border);
-    }
-
-    .message.system {
-      align-self: center;
-      background: transparent;
-      color: var(--text-muted);
-      font-style: italic;
-      max-width: 90%;
-      border: 1px dashed var(--border);
-    }
-
-    .message.attachment {
-      align-self: flex-start;
-      background: var(--surface-secondary);
-      border-left: 4px solid var(--accent);
-      font-family: monospace;
-      font-size: 0.85rem;
-    }
-
-    .chat-input-area {
-      display: flex;
-      padding: 1.25rem 1.75rem;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      gap: 0.8rem;
-      flex-wrap: wrap;
-    }
-
-    .chat-input-area input {
-      flex: 1 1 200px;
-      background: var(--surface-secondary);
-      border: 1px solid var(--border);
-      border-radius: 48px;
-      padding: 0.9rem 1.4rem;
-      font-size: 0.95rem;
-      color: var(--text-primary);
-      transition: all 0.2s;
-    }
-
-    .chat-input-area input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-
-    .chat-input-area input:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .chat-input-area button {
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 48px;
-      padding: 0 2rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: 1px solid var(--accent);
-    }
-
-    .chat-input-area button:hover:not(:disabled) {
-      background: #1d4ed8;
-    }
-
-    .chat-input-area button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .attach-btn {
-      background: var(--surface-secondary);
-      border: 1px solid var(--border);
-      border-radius: 48px;
-      padding: 0.9rem 1.4rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .attach-btn:hover {
-      background: #e5e9f0;
-    }
-
-    /* RIGHT PANEL (unchanged) */
-    .right-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
+    /* right panel cards */
+    .right-panel { display: flex; flex-direction: column; gap: 1.5rem; }
     .card {
       background: var(--surface);
       border-radius: var(--radius-md);
@@ -427,55 +182,10 @@
       padding: 1.5rem;
       box-shadow: var(--shadow-md);
     }
-
-    .card h3 {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .consent-box {
-      background: var(--surface-secondary);
-      border-radius: var(--radius-sm);
-      padding: 1.2rem;
-      border-left: 3px solid var(--accent);
-      margin-bottom: 1rem;
-    }
-
-    .consent-box p {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      margin-bottom: 1.2rem;
-    }
-
-    .button-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.8rem;
-      margin-top: 1rem;
-    }
-
-    .share-link {
-      background: var(--surface-secondary);
-      padding: 0.8rem 1rem;
-      border-radius: var(--radius-sm);
-      font-family: monospace;
-      font-size: 0.8rem;
-      word-break: break-all;
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-    }
-
-    .options-list {
-      list-style: none;
-      margin: 1rem 0;
-    }
-
+    .card h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 1rem; }
+    .consent-box { background: var(--surface-secondary); border-radius: var(--radius-sm); padding: 1.2rem; border-left: 3px solid var(--accent); margin-bottom: 1rem; }
+    .share-link { background: var(--surface-secondary); padding: 0.8rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.8rem; word-break: break-all; }
+    .options-list { list-style: none; margin: 1rem 0; }
     .options-list li {
       background: var(--surface-secondary);
       border-radius: var(--radius-sm);
@@ -483,751 +193,203 @@
       margin-bottom: 0.6rem;
       border-left: 4px solid transparent;
       cursor: pointer;
-      transition: all 0.2s;
-      font-size: 0.9rem;
-      border: 1px solid var(--border);
-    }
-
-    .options-list li:hover {
-      border-left-color: var(--accent);
-      background: #eef2f6;
-    }
-
-    .options-list li.selected {
-      border-left-color: var(--success);
-      background: #e6f7ec;
-    }
-
-    .agreement-preview {
-      background: var(--surface-secondary);
-      border-radius: var(--radius-sm);
-      padding: 1rem;
-      font-size: 0.9rem;
-      white-space: pre-wrap;
-      border: 1px solid var(--border);
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .attachment-list {
-      margin-top: 1rem;
-    }
-
-    .attachment-item {
-      background: var(--surface-secondary);
-      border-radius: var(--radius-sm);
-      padding: 0.5rem 1rem;
-      margin-bottom: 0.5rem;
-      font-size: 0.85rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
-    footer {
-      margin-top: 3rem;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      border-top: 1px solid var(--border);
-      padding-top: 2rem;
-    }
-
-    .n3x-ascii {
-      font-family: monospace;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      letter-spacing: 2px;
-      margin-top: 1rem;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .options-list li:hover { border-left-color: var(--accent); }
+    .options-list li.selected { border-left-color: var(--success); background: #e6f7ec; }
+    .option-justify { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem; }
+    .legitimacy-check { display: flex; gap: 1rem; margin-top: 1rem; font-size: 0.8rem; }
+    .legitimacy-check span { display: flex; align-items: center; gap: 0.3rem; }
+    .tooltip-icon { cursor: help; border-bottom: 1px dotted; }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="logo-block">
-        <span class="logo-icon">⚖️</span>
-        <span class="logo-text">AURUM</span>
-        <span class="logo-tag">n3x // dispute resolution</span>
-      </div>
-      <div class="connection-indicator" id="connectionIndicator">
-        <span class="dot connected"></span>
-        <span>connected</span>
-      </div>
-    </header>
-
-    <div class="main-grid">
-      <!-- LEFT SIDEBAR: DISPUTE LIST -->
-      <div class="left-sidebar">
-        <div class="sidebar-header">
-          <h3>⚡ your disputes</h3>
-          <button class="btn btn-primary" id="newDisputeBtn" style="padding:0.4rem 1rem;">➕ New</button>
-        </div>
-        <div id="disputeListContainer" class="dispute-list">
-          <!-- populated dynamically -->
-        </div>
-      </div>
-
-      <!-- CENTER: CHAT PANEL -->
-      <div class="chat-panel">
-        <div class="chat-header">
-          <h2>⚡ Negotiation channel</h2>
-          <span class="party-badge" id="partyBadge">—</span>
-        </div>
-        <div class="chat-messages" id="chatMessages">
-          <div class="message system">Welcome to AURUM. Start a new dispute or open an existing one.</div>
-        </div>
-        <div class="chat-input-area" id="chatInputArea">
-          <input type="text" id="messageInput" placeholder="Type a message..." disabled>
-          <span class="attach-btn" id="attachButton">📎 Attach</span>
-          <input type="file" id="fileInput" style="display: none;" multiple>
-          <button id="sendButton" disabled>Send</button>
-        </div>
-      </div>
-
-      <!-- RIGHT PANEL -->
-      <div class="right-panel">
-        <!-- Consent card -->
-        <div class="card" id="consentCard">
-          <h3>🔐 informed consent</h3>
-          <div class="consent-box">
-            <p>AURUM is an AI assistant, not a lawyer or mediator. It does not provide legal advice. Conversations are confidential and stored only with your consent. You may delete your data at any time.</p>
-            <div class="button-group">
-              <button class="btn btn-primary" id="consentBtn">I consent</button>
-              <button class="btn btn-outline" id="declineBtn">I do not consent</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dispute intake -->
-        <div class="card hidden" id="intakeCard">
-          <h3>📋 describe the dispute</h3>
-          <textarea id="disputeInput" rows="4" style="width:100%; background:var(--surface-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.8rem; color:var(--text-primary); margin-bottom:1rem; font-family:inherit;" placeholder="e.g., Landlord refuses to return $800 deposit..."></textarea>
-          <button class="btn btn-primary" id="classifyBtn">analyze dispute</button>
-        </div>
-
-        <!-- Classification result -->
-        <div class="card hidden" id="classificationCard">
-          <h3>🔍 analysis</h3>
-          <div id="classificationDisplay" style="margin-bottom:1.5rem; background:var(--surface-secondary); padding:1rem; border-radius:var(--radius-sm);"></div>
-          <button class="btn btn-success" id="proceedBtn">proceed to negotiation</button>
-        </div>
-
-        <!-- Share invite link -->
-        <div class="card hidden" id="shareCard">
-          <h3>🔗 invite other party</h3>
-          <div class="share-link" id="shareLink">generating...</div>
-          <div class="button-group" style="margin-top:1rem;">
-            <button class="btn btn-outline" id="copyLinkBtn">copy link</button>
-          </div>
-        </div>
-
-        <!-- Negotiation tools -->
-        <div class="card hidden" id="negotiationCard">
-          <h3>⚙️ negotiation tools</h3>
-          <div class="button-group">
-            <button class="btn btn-outline" id="getOptionsBtn">generate options</button>
-            <button class="btn btn-outline" id="generateAgreementBtn">create settlement</button>
-          </div>
-          <div id="optionsContainer" style="margin-top:1rem;"></div>
-          <div id="agreementContainer" style="margin-top:1rem;"></div>
-          <div id="attachmentsContainer" class="attachment-list"></div>
-          <hr style="border-color:var(--border); margin:1.5rem 0;">
-          <button class="btn btn-outline" id="deleteDataBtn" style="color:var(--danger);">delete my data</button>
-        </div>
-
-        <!-- Party status -->
-        <div class="card">
-          <h3>👥 parties</h3>
-          <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
-            <span>Party A: <span id="partyAStatus" style="color:var(--text-muted);">—</span></span>
-            <span>Party B: <span id="partyBStatus" style="color:var(--text-muted);">—</span></span>
-          </div>
-        </div>
-
-        <div class="n3x-ascii" style="text-align:center;">---[ n3x · lex ]---</div>
-      </div>
+<div class="app">
+  <header>
+    <div class="logo-block"><span class="logo-icon">⚖️</span><span class="logo-text">AURUM</span><span class="logo-tag">algorithmic mediation · n3x</span></div>
+    <div><small style="color:var(--text-muted);">procedural justice · non‑determinacy · explainability · reversibility</small></div>
+  </header>
+  <div class="main-grid">
+    <div class="left-sidebar"><div class="sidebar-header"><h3>⚡ disputes</h3><button class="btn btn-primary" id="newDisputeBtn" style="padding:0.4rem 1rem;">+ New</button></div><div id="disputeListContainer"></div></div>
+    <div class="chat-panel">
+      <div class="chat-header"><h2>⚖️ AI‑assisted negotiation</h2><span class="party-badge" id="partyBadge">—</span></div>
+      <div class="chat-messages" id="chatMessages"><div class="message system">Welcome to AURUM. Create or select a dispute to begin.</div></div>
+      <div class="chat-input-area"><input type="text" id="messageInput" placeholder="Type a message..." disabled><span class="attach-btn" id="attachButton">📎 Attach</span><input type="file" id="fileInput" style="display:none;" multiple><button id="sendButton" disabled>Send</button></div>
     </div>
-
-    <footer>
-      <span>© 2026 AURUM · AI‑assisted early dispute resolution</span>
-    </footer>
+    <div class="right-panel">
+      <div class="card" id="legitimacyCard"><h3>🔍 legitimacy framework</h3><div id="legitimacyStatus">—</div><div class="legitimacy-check" id="legitimacyChecks"></div></div>
+      <div class="card" id="consentCard"><h3>🔐 informed consent</h3><div class="consent-box"><p>AURUM is an AI assistant, not a lawyer/mediator. No legal advice. Conversations are encrypted.</p><div style="margin:1rem 0;"><label><input type="checkbox" id="consentStorageCheckbox"> I consent to data storage for dispute resolution</label><br><label><input type="checkbox" id="consentTrainingCheckbox"> I consent to anonymized data for model improvement (optional)</label></div><div class="button-group"><button class="btn btn-primary" id="consentBtn">I consent</button><button class="btn btn-outline" id="declineBtn">I do not consent</button></div></div></div>
+      <div class="card hidden" id="intakeCard"><h3>📋 describe the dispute</h3><textarea id="disputeInput" rows="4" style="width:100%; background:var(--surface-secondary); border-radius:var(--radius-sm); padding:0.8rem;" placeholder="e.g., Landlord refuses to return $800 deposit..."></textarea><button class="btn btn-primary" id="classifyBtn">analyze dispute</button></div>
+      <div class="card hidden" id="classificationCard"><h3>🔍 analysis <span id="classificationExplainIcon" class="tooltip-icon" style="font-size:0.7rem;">ⓘ</span></h3><div id="classificationDisplay"></div><button class="btn btn-success" id="proceedBtn">proceed to negotiation</button></div>
+      <div class="card hidden" id="shareCard"><h3>🔗 invite other party</h3><div class="share-link" id="shareLink"></div><button class="btn btn-outline" id="copyLinkBtn">copy link</button></div>
+      <div class="card hidden" id="negotiationCard"><h3>⚙️ negotiation tools</h3><div class="button-group"><button class="btn btn-outline" id="guidedNegotiationBtn">✨ Guided negotiation</button><button class="btn btn-outline" id="getOptionsBtn">generate options</button><button class="btn btn-outline" id="generateAgreementBtn">create settlement</button><button class="btn btn-warning" id="humanEscalateBtn">🕊️ Request human mediator</button><button class="btn btn-danger" id="withdrawConsentBtn">⛔ Withdraw consent</button></div><div id="optionsContainer"></div><div id="agreementContainer"></div><div id="attachmentsContainer"></div><hr><button class="btn btn-outline" id="deleteDataBtn">delete my data</button></div>
+      <div class="card"><h3>👥 parties</h3><div><span>Party A: <span id="partyAStatus">—</span></span> &nbsp; <span>Party B: <span id="partyBStatus">—</span></span></div><div id="escalationStatus" style="font-size:0.8rem; margin-top:0.5rem;"></div></div>
+    </div>
   </div>
+  <footer style="margin-top:2rem; text-align:center; color:var(--text-muted); font-size:0.8rem;">AURUM · algorithmic mediation · non‑determinacy · explainability · reversibility</footer>
+</div>
 
-  <!-- Firebase & Groq config -->
-  <script type="importmap">
-    {
-      "imports": {
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
-      }
-    }
-  </script>
+<script type="importmap">
+  { "imports": { "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js", "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js" } }
+</script>
+<script type="module">
+  import { initializeApp } from 'firebase/app';
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, deleteField } from 'firebase/firestore';
 
-  <script type="module">
-    // ---------- CONFIGURATION ----------
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyDu-dywLoaxALdebvZdjfxA83nHBuvFBGE",
-      authDomain: "aurum-dispute-resolution.firebaseapp.com",
-      projectId: "aurum-dispute-resolution",
-      storageBucket: "aurum-dispute-resolution.firebasestorage.app",
-      messagingSenderId: "728479269779",
-      appId: "1:728479269779:web:27b9cdef6c9458e5ff1e66",
-      measurementId: "G-T6S07C9CX1"
-    };
+  const FIREBASE_CONFIG = { apiKey: "AIzaSyDu-dywLoaxALdebvZdjfxA83nHBuvFBGE", authDomain: "aurum-dispute-resolution.firebaseapp.com", projectId: "aurum-dispute-resolution", storageBucket: "aurum-dispute-resolution.firebasestorage.app", messagingSenderId: "728479269779", appId: "1:728479269779:web:27b9cdef6c9458e5ff1e66", measurementId: "G-T6S07C9CX1" };
+  const GROQ_API_KEY = "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";
+  const GROQ_MODEL = "llama-3.3-70b-versatile";
 
-    const GROQ_API_KEY = "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";
-    const GROQ_MODEL = "llama-3.3-70b-versatile";
+  const app = initializeApp(FIREBASE_CONFIG);
+  const db = getFirestore(app);
 
-    // ---------- FIREBASE INIT ----------
-    import { initializeApp } from 'firebase/app';
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
+  const sessionId = localStorage.getItem('sessionId') || (() => { const s = crypto.randomUUID(); localStorage.setItem('sessionId', s); return s; })();
 
-    let app, db;
-    try {
-      app = initializeApp(FIREBASE_CONFIG);
-      db = getFirestore(app);
-      console.log("Firebase ready");
-    } catch (e) {
-      console.warn("Firebase failed – using in‑memory mock");
-      // Simple mock for demo
-      window.mockDb = { disputes: {} };
-      db = {
-        doc: (path) => ({ id: path.split('/').pop() }),
-        getDoc: async (ref) => {
-          const data = window.mockDb.disputes[ref.id];
-          return { exists: () => !!data, data: () => data };
-        },
-        setDoc: async (ref, data) => { window.mockDb.disputes[ref.id] = data; },
-        updateDoc: async (ref, updates) => {
-          const id = ref.id;
-          if (window.mockDb.disputes[id]) {
-            Object.assign(window.mockDb.disputes[id], updates);
-          }
-        },
-        onSnapshot: (ref, cb) => {
-          cb({ exists: () => true, data: () => window.mockDb.disputes[ref.id] || {} });
-          return () => {};
-        },
-        collection: () => ({})
-      };
-    }
+  // DOM elements
+  const disputeListContainer = document.getElementById('disputeListContainer');
+  const newDisputeBtn = document.getElementById('newDisputeBtn');
+  const chatMessages = document.getElementById('chatMessages');
+  const messageInput = document.getElementById('messageInput');
+  const sendButton = document.getElementById('sendButton');
+  const attachButton = document.getElementById('attachButton');
+  const fileInput = document.getElementById('fileInput');
+  const partyBadge = document.getElementById('partyBadge');
+  const consentCard = document.getElementById('consentCard');
+  const intakeCard = document.getElementById('intakeCard');
+  const classificationCard = document.getElementById('classificationCard');
+  const shareCard = document.getElementById('shareCard');
+  const negotiationCard = document.getElementById('negotiationCard');
+  const disputeInput = document.getElementById('disputeInput');
+  const classifyBtn = document.getElementById('classifyBtn');
+  const classificationDisplay = document.getElementById('classificationDisplay');
+  const proceedBtn = document.getElementById('proceedBtn');
+  const shareLink = document.getElementById('shareLink');
+  const copyLinkBtn = document.getElementById('copyLinkBtn');
+  const getOptionsBtn = document.getElementById('getOptionsBtn');
+  const generateAgreementBtn = document.getElementById('generateAgreementBtn');
+  const optionsContainer = document.getElementById('optionsContainer');
+  const agreementContainer = document.getElementById('agreementContainer');
+  const attachmentsContainer = document.getElementById('attachmentsContainer');
+  const deleteDataBtn = document.getElementById('deleteDataBtn');
+  const partyAStatus = document.getElementById('partyAStatus');
+  const partyBStatus = document.getElementById('partyBStatus');
+  const withdrawConsentBtn = document.getElementById('withdrawConsentBtn');
+  const humanEscalateBtn = document.getElementById('humanEscalateBtn');
+  const guidedNegotiationBtn = document.getElementById('guidedNegotiationBtn');
+  const legitimacyChecksDiv = document.getElementById('legitimacyChecks');
 
-    // ---------- SESSION ID ----------
-    function getSessionId() {
-      let sid = localStorage.getItem('sessionId');
-      if (!sid) {
-        sid = crypto.randomUUID();
-        localStorage.setItem('sessionId', sid);
-      }
-      return sid;
-    }
-    const sessionId = getSessionId();
+  let currentDisputeId = null, currentDisputeRef = null, currentParty = null, unsubscribeDispute = null, unsubscribeMessages = null;
+  let urlParams = new URLSearchParams(window.location.search);
+  let invitedDisputeId = urlParams.get('dispute'), invitedParty = urlParams.get('party');
 
-    // ---------- UI Elements ----------
-    // left sidebar
-    const disputeListContainer = document.getElementById('disputeListContainer');
-    const newDisputeBtn = document.getElementById('newDisputeBtn');
+  function addMessageToChat(sender, text, isAttachment = false) { const msgDiv = document.createElement('div'); msgDiv.className = `message ${sender}${isAttachment ? ' attachment' : ''}`; msgDiv.textContent = text; chatMessages.appendChild(msgDiv); chatMessages.scrollTop = chatMessages.scrollHeight; }
+  async function addMessageToFirestore(sender, text, isAttachment = false) { if (!currentDisputeRef) return; await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), { sender, text, timestamp: serverTimestamp(), party: currentParty, type: isAttachment ? 'attachment' : 'text' }); }
 
-    // center chat
-    const chatMessages = document.getElementById('chatMessages');
-    const messageInput = document.getElementById('messageInput');
-    const sendButton = document.getElementById('sendButton');
-    const attachButton = document.getElementById('attachButton');
-    const fileInput = document.getElementById('fileInput');
-    const partyBadge = document.getElementById('partyBadge');
+  async function loadDisputeList() {
+    const q1 = query(collection(db, 'disputes'), where('partyA.sessionId', '==', sessionId));
+    const q2 = query(collection(db, 'disputes'), where('partyB.sessionId', '==', sessionId));
+    const [snapA, snapB] = await Promise.all([getDocs(q1), getDocs(q2)]);
+    const disputes = [...snapA.docs, ...snapB.docs].map(d => ({ id: d.id, ...d.data() }));
+    disputeListContainer.innerHTML = disputes.map(d => `<div class="dispute-list-item ${d.id === currentDisputeId ? 'active' : ''}" data-id="${d.id}"><div class="dispute-title">${d.title || (d.disputeText?.substring(0,40) || 'Dispute')}</div><div class="dispute-meta"><span>${d.partyA?.sessionId === sessionId ? 'Party A' : 'Party B'}</span><span>${d.partyA?.consented && d.partyB?.consented ? '🟢 active' : '⏳ pending'}</span></div></div>`).join('');
+    document.querySelectorAll('.dispute-list-item').forEach(el => el.addEventListener('click', () => { const id = el.dataset.id; const dispute = disputes.find(d => d.id === id); const party = dispute?.partyA?.sessionId === sessionId ? 'A' : 'B'; loadDispute(id, party); }));
+  }
 
-    // right panel
-    const consentCard = document.getElementById('consentCard');
-    const intakeCard = document.getElementById('intakeCard');
-    const classificationCard = document.getElementById('classificationCard');
-    const shareCard = document.getElementById('shareCard');
-    const negotiationCard = document.getElementById('negotiationCard');
-    const disputeInput = document.getElementById('disputeInput');
-    const classifyBtn = document.getElementById('classifyBtn');
-    const classificationDisplay = document.getElementById('classificationDisplay');
-    const proceedBtn = document.getElementById('proceedBtn');
-    const shareLink = document.getElementById('shareLink');
-    const copyLinkBtn = document.getElementById('copyLinkBtn');
-    const getOptionsBtn = document.getElementById('getOptionsBtn');
-    const generateAgreementBtn = document.getElementById('generateAgreementBtn');
-    const optionsContainer = document.getElementById('optionsContainer');
-    const agreementContainer = document.getElementById('agreementContainer');
-    const attachmentsContainer = document.getElementById('attachmentsContainer');
-    const deleteDataBtn = document.getElementById('deleteDataBtn');
-    const partyAStatus = document.getElementById('partyAStatus');
-    const partyBStatus = document.getElementById('partyBStatus');
+  async function loadDispute(disputeId, party) {
+    if (unsubscribeDispute) unsubscribeDispute(); if (unsubscribeMessages) unsubscribeMessages();
+    currentDisputeId = disputeId; currentParty = party; currentDisputeRef = doc(db, 'disputes', disputeId);
+    partyBadge.textContent = `Party ${party}`;
+    const url = new URL(window.location); url.searchParams.set('dispute', disputeId); url.searchParams.set('party', party); window.history.pushState({}, '', url);
+    unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => { if (snap.exists()) updateUIFromDispute(snap.data()); });
+    const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(100));
+    unsubscribeMessages = onSnapshot(messagesQuery, (snap) => { chatMessages.innerHTML = ''; snap.forEach(d => addMessageToChat(d.data().sender, d.data().text, d.data().type === 'attachment')); });
+    loadDisputeList();
+  }
 
-    // ---------- Global state ----------
-    let currentDisputeId = null;
-    let currentDisputeRef = null;
-    let currentParty = null; // 'A' or 'B'
-    let unsubscribeDispute = null;
-    let unsubscribeMessages = null;
-    let urlParams = new URLSearchParams(window.location.search);
-    let invitedDisputeId = urlParams.get('dispute');
-    let invitedParty = urlParams.get('party');
+  function updateUIFromDispute(data) {
+    partyAStatus.textContent = data.partyA?.consented ? '✅ consented' : '⏳ pending';
+    partyBStatus.textContent = data.partyB?.consented ? '✅ consented' : '⏳ pending';
+    document.getElementById('escalationStatus').innerHTML = data.humanEscalationRequested ? '🕊️ Human mediator requested' : '';
+    // Legitimacy panel
+    const nonDet = !data.options || data.options.every(o => !o.binding); const expl = data.classification?.explanation ? true : false; const rev = data.partyA?.consented !== false && data.partyB?.consented !== false;
+    legitimacyChecksDiv.innerHTML = `<span class="${nonDet ? '✅' : '❌'}"> non‑determinacy</span> <span class="${expl ? '✅' : '❌'}"> explainability</span> <span class="${rev ? '✅' : '❌'}"> reversibility</span>`;
+    // Show/hide cards based on consent & state
+    const myConsent = (currentParty === 'A' ? data.partyA?.consented : data.partyB?.consented);
+    const bothConsented = data.partyA?.consented && data.partyB?.consented;
+    if (!myConsent) { consentCard.classList.remove('hidden'); intakeCard.classList.add('hidden'); classificationCard.classList.add('hidden'); shareCard.classList.add('hidden'); negotiationCard.classList.add('hidden'); messageInput.disabled = true; sendButton.disabled = true; }
+    else if (!data.disputeText) { consentCard.classList.add('hidden'); intakeCard.classList.remove('hidden'); classificationCard.classList.add('hidden'); shareCard.classList.add('hidden'); negotiationCard.classList.add('hidden'); messageInput.disabled = true; sendButton.disabled = true; }
+    else if (data.classification && !bothConsented) { classificationCard.classList.remove('hidden'); shareCard.classList.remove('hidden'); intakeCard.classList.add('hidden'); consentCard.classList.add('hidden'); negotiationCard.classList.add('hidden'); classificationDisplay.innerHTML = `<p><strong>Domain:</strong> ${data.classification.domain}<br><strong>Issues:</strong> ${data.classification.issues?.join(', ')}<br><strong>Recommendation:</strong> ${data.classification.recommendedPathway}<br><strong>Confidence:</strong> ${data.classification.confidence}%</p><p><em>${data.classification.explanation || ''}</em></p>`; const inviteUrl = `${window.location.origin}${window.location.pathname}?dispute=${currentDisputeId}&party=${currentParty === 'A' ? 'B' : 'A'}`; shareLink.textContent = inviteUrl; }
+    else if (bothConsented) { consentCard.classList.add('hidden'); intakeCard.classList.add('hidden'); classificationCard.classList.add('hidden'); shareCard.classList.add('hidden'); negotiationCard.classList.remove('hidden'); messageInput.disabled = false; sendButton.disabled = false; if (data.options && data.options.length) { const optsHtml = data.options.map((opt, idx) => `<li class="${data.selectedOption === idx ? 'selected' : ''}" data-opt-index="${idx}"><div><strong>${opt.description}</strong>${opt.stake ? ` ($${opt.stake})` : ''}<div class="option-justify">ⓘ ${opt.justification || 'Fair settlement pattern'}</div></div></li>`).join(''); optionsContainer.innerHTML = `<ul class="options-list">${optsHtml}</ul>`; document.querySelectorAll('.options-list li').forEach(li => li.addEventListener('click', () => selectOption(parseInt(li.dataset.optIndex)))); } else optionsContainer.innerHTML = ''; if (data.settlementText) agreementContainer.innerHTML = `<div class="agreement-preview">${data.settlementText}</div>`; }
+  }
 
-    // ---------- Helper: add message to chat ----------
-    function addMessageToChat(sender, text, isAttachment = false) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}${isAttachment ? ' attachment' : ''}`;
-      msgDiv.textContent = text;
-      chatMessages.appendChild(msgDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+  async function selectOption(idx) { await updateDoc(currentDisputeRef, { selectedOption: idx }); }
 
-    // ---------- Helper: store message in Firestore ----------
-    async function addMessageToFirestore(sender, text, isAttachment = false) {
-      if (!currentDisputeRef) return;
-      const msgRef = collection(db, 'disputes', currentDisputeId, 'messages');
-      await addDoc(msgRef, {
-        sender,
-        text,
-        timestamp: serverTimestamp(),
-        party: currentParty,
-        type: isAttachment ? 'attachment' : 'text'
-      });
-    }
+  async function callGroq(prompt, systemMsg = 'You are a neutral dispute resolution assistant.', temp = 0.3, json = false) {
+    const messages = [{ role: 'system', content: systemMsg }, { role: 'user', content: prompt }];
+    const body = { model: GROQ_MODEL, messages, temperature: temp, max_tokens: 800 };
+    if (json) body.response_format = { type: 'json_object' };
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await resp.json(); return data.choices[0].message.content;
+  }
 
-    // ---------- Load disputes for sidebar ----------
-    async function loadDisputeList() {
-      const q = query(collection(db, 'disputes'), where('partyA.sessionId', '==', sessionId));
-      const q2 = query(collection(db, 'disputes'), where('partyB.sessionId', '==', sessionId));
-      const [snapA, snapB] = await Promise.all([getDocs(q), getDocs(q2)]);
-      const disputes = [...snapA.docs, ...snapB.docs].map(doc => ({ id: doc.id, ...doc.data() }));
-      renderDisputeList(disputes);
-    }
+  async function classifyDispute(text) {
+    const prompt = `Classify this dispute: "${text}". Return JSON with fields: domain (string), issues (array), recommendedPathway (string), confidence (integer 0-100), explanation (short reason).`;
+    const res = await callGroq(prompt, 'You are a dispute classifier. Output JSON.', 0.1, true);
+    try { return JSON.parse(res); } catch(e) { return { domain: 'general', issues: ['unknown'], recommendedPathway: 'negotiation', confidence: 60, explanation: 'Auto-classified with low confidence.' }; }
+  }
+  async function generateTitle(text) { return (await callGroq(`Generate a short title (max 6 words) for: "${text}"`, 'Output only the title.', 0.3)).trim(); }
+  async function generateOptions(disputeText, statements) {
+    const prompt = `Based on dispute: "${disputeText}" and statements: ${JSON.stringify(statements)}, suggest 3 fair settlement options. For each include description, stake (number or null), and justification (why it's fair). Return JSON: { options: [{ description, stake, justification }] }`;
+    const res = await callGroq(prompt, 'You are a neutral mediator. Output JSON.', 0.4, true);
+    const parsed = JSON.parse(res); let opts = parsed.options; if (!opts) opts = [];
+    // randomize order (non-determinacy)
+    for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [opts[i], opts[j]] = [opts[j], opts[i]]; }
+    return opts;
+  }
+  async function generateAgreement(disputeText, optionDesc) { return await callGroq(`Write a simple non-binding settlement agreement. Dispute: ${disputeText}. Terms: ${optionDesc}. Use plain language, placeholders for names.`, 'You draft neutral agreements.'); }
+  async function generateSummary(statements) { return await callGroq(`Summarize agreements and disagreements from these statements: ${JSON.stringify(statements)}. Return a short bullet list.`, 'Neutral summarizer.'); }
 
-    function renderDisputeList(disputes) {
-      disputeListContainer.innerHTML = '';
-      disputes.forEach(d => {
-        const div = document.createElement('div');
-        div.className = `dispute-list-item ${d.id === currentDisputeId ? 'active' : ''}`;
-        const title = d.title || (d.disputeText ? d.disputeText.substring(0,40) + '…' : 'Untitled dispute');
-        const yourRole = d.partyA?.sessionId === sessionId ? 'Party A' : 'Party B';
-        const status = d.partyA?.consented && d.partyB?.consented ? '🟢 active' : '⏳ pending';
-        div.innerHTML = `
-          <div class="dispute-title">${title}</div>
-          <div class="dispute-meta">
-            <span>${yourRole}</span>
-            <span>${status}</span>
-          </div>
-        `;
-        div.addEventListener('click', () => {
-          const party = d.partyA?.sessionId === sessionId ? 'A' : 'B';
-          loadDispute(d.id, party);
-        });
-        disputeListContainer.appendChild(div);
-      });
-    }
+  // Event handlers
+  document.getElementById('consentBtn').addEventListener('click', async () => {
+    const storageConsent = document.getElementById('consentStorageCheckbox').checked;
+    if (!storageConsent) { alert('Storage consent required.'); return; }
+    if (!currentDisputeId) { const id = crypto.randomUUID(); const ref = doc(db, 'disputes', id); await setDoc(ref, { createdAt: serverTimestamp(), status: 'intake', partyA: { sessionId: sessionId, consented: true, storageConsent: true, trainingConsent: document.getElementById('consentTrainingCheckbox').checked }, partyB: { sessionId: null, consented: false }, disputeText: '', classification: null, statements: [], options: [], selectedOption: null, settlementText: '', attachments: [], humanEscalationRequested: false }); loadDispute(id, 'A'); }
+    else { const update = currentParty === 'A' ? { 'partyA.consented': true, 'partyA.storageConsent': true, 'partyA.trainingConsent': document.getElementById('consentTrainingCheckbox').checked } : { 'partyB.consented': true, 'partyB.sessionId': sessionId }; await updateDoc(currentDisputeRef, update); }
+  });
+  document.getElementById('declineBtn').addEventListener('click', () => { alert('Consent required to proceed.'); });
+  classifyBtn.addEventListener('click', async () => {
+    const text = disputeInput.value.trim(); if (!text) return;
+    const classification = await classifyDispute(text); const title = await generateTitle(text);
+    await updateDoc(currentDisputeRef, { disputeText: text, classification, title });
+  });
+  proceedBtn.addEventListener('click', () => {});
+  copyLinkBtn.addEventListener('click', () => { navigator.clipboard.writeText(shareLink.textContent); alert('Link copied'); });
+  getOptionsBtn.addEventListener('click', async () => { const snap = await getDoc(currentDisputeRef); const data = snap.data(); const opts = await generateOptions(data.disputeText, data.statements || []); await updateDoc(currentDisputeRef, { options: opts, selectedOption: null }); });
+  generateAgreementBtn.addEventListener('click', async () => { const snap = await getDoc(currentDisputeRef); const data = snap.data(); if (!data.options || data.selectedOption === null) { alert('Select an option first'); return; } const agreement = await generateAgreement(data.disputeText, data.options[data.selectedOption].description); await updateDoc(currentDisputeRef, { settlementText: agreement }); });
+  deleteDataBtn.addEventListener('click', async () => { if (confirm('Delete all data for this dispute?')) await updateDoc(currentDisputeRef, { deleted: true, disputeText: deleteField(), statements: deleteField(), options: deleteField(), settlementText: deleteField() }); window.location.href = window.location.pathname; });
+  withdrawConsentBtn.addEventListener('click', async () => { if (confirm('Withdraw consent? You will no longer see dispute details until you re-consent.')) { const update = currentParty === 'A' ? { 'partyA.consented': false } : { 'partyB.consented': false }; await updateDoc(currentDisputeRef, update); } });
+  humanEscalateBtn.addEventListener('click', async () => { await updateDoc(currentDisputeRef, { humanEscalationRequested: true }); addMessageToChat('system', 'Human mediator has been requested. The other party will be notified.'); await addMessageToFirestore('system', 'A party requested human mediator intervention.', false); });
+  guidedNegotiationBtn.addEventListener('click', async () => { const snap = await getDoc(currentDisputeRef); const data = snap.data(); if (!data.statements || data.statements.length < 2) { addMessageToChat('system', 'Guided negotiation: please both parties share your perspectives via chat first.'); return; } const summary = await generateSummary(data.statements); addMessageToChat('system', `📋 Summary of agreements/disagreements:\n${summary}`); await addMessageToFirestore('system', `Summary generated: ${summary}`, false); });
 
-    // ---------- Load a specific dispute ----------
-    async function loadDispute(disputeId, party) {
-      // Clean up previous listeners
-      if (unsubscribeDispute) unsubscribeDispute();
-      if (unsubscribeMessages) unsubscribeMessages();
+  async function sendMessage() {
+    const text = messageInput.value.trim(); if (!text) return;
+    addMessageToChat('user', text); await addMessageToFirestore('user', text); messageInput.value = '';
+    await updateDoc(currentDisputeRef, { statements: arrayUnion({ party: currentParty, text, timestamp: new Date().toISOString() }) });
+    const messagesQuery = query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20));
+    const snap = await getDocs(messagesQuery);
+    const history = snap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
+    const sysPrompt = 'You are an impartial AI mediator. Facilitate, ask questions, suggest constructive approaches. Never give legal advice. Be neutral and respectful. Remind that all suggestions are non-binding.';
+    const groqResp = await fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: GROQ_MODEL, messages: [{ role: 'system', content: sysPrompt }, ...history], temperature: 0.7 }) });
+    const reply = (await groqResp.json()).choices[0].message.content;
+    addMessageToChat('bot', reply); await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), { sender: 'bot', text: reply, timestamp: serverTimestamp() });
+  }
+  sendButton.addEventListener('click', sendMessage); messageInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+  attachButton.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async (e) => { if (!currentDisputeRef) return; for (const file of e.target.files) { const reader = new FileReader(); reader.onload = async (ev) => { const base64 = ev.target.result.split(',')[1]; await updateDoc(currentDisputeRef, { attachments: arrayUnion({ name: file.name, type: file.type, content: base64, size: file.size }) }); addMessageToChat('user', `📎 Attached: ${file.name}`, true); await addMessageToFirestore('user', `📎 Attached: ${file.name}`, true); }; reader.readAsDataURL(file); } fileInput.value = ''; });
+  newDisputeBtn.addEventListener('click', async () => { const id = crypto.randomUUID(); const ref = doc(db, 'disputes', id); await setDoc(ref, { createdAt: serverTimestamp(), status: 'intake', partyA: { sessionId: sessionId, consented: true, storageConsent: true }, partyB: { sessionId: null, consented: false }, disputeText: '', classification: null, statements: [], options: [], selectedOption: null, settlementText: '', attachments: [], humanEscalationRequested: false }); loadDispute(id, 'A'); });
 
-      currentDisputeId = disputeId;
-      currentParty = party;
-      currentDisputeRef = doc(db, 'disputes', disputeId);
-      partyBadge.textContent = `Party ${party}`;
-
-      // Update URL
-      const url = new URL(window.location);
-      url.searchParams.set('dispute', disputeId);
-      url.searchParams.set('party', party);
-      window.history.pushState({}, '', url);
-
-      // Listen to dispute document
-      unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
-        if (!snap.exists()) return;
-        const data = snap.data();
-        updateUIFromDispute(data);
-      });
-
-      // Listen to messages
-      const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(50));
-      unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
-        chatMessages.innerHTML = ''; // rebuild
-        snap.forEach(doc => {
-          const msg = doc.data();
-          addMessageToChat(msg.sender, msg.text, msg.type === 'attachment');
-        });
-      });
-
-      // Refresh sidebar to highlight this dispute
-      loadDisputeList();
-    }
-
-    // ---------- Update UI based on dispute data ----------
-    function updateUIFromDispute(data) {
-      partyAStatus.textContent = data.partyA?.consented ? '✅ consented' : '⏳ pending';
-      partyBStatus.textContent = data.partyB?.consented ? '✅ consented' : '⏳ pending';
-
-      // Show attachments if any
-      if (data.attachments && data.attachments.length > 0) {
-        attachmentsContainer.innerHTML = '<h4 style="margin:0.5rem 0;">Attached documents:</h4>';
-        data.attachments.forEach((att, idx) => {
-          const div = document.createElement('div');
-          div.className = 'attachment-item';
-          div.innerHTML = `<span>📎 ${att.name} (${att.type})</span> <button class="btn btn-outline" style="padding:0.2rem 0.8rem;" data-attach="${idx}">view</button>`;
-          attachmentsContainer.appendChild(div);
-          div.querySelector('button').addEventListener('click', () => {
-            if (att.type.startsWith('text/') || att.name.endsWith('.txt')) {
-              const win = window.open();
-              win.document.write(`<pre>${atob(att.content)}</pre>`);
-            } else {
-              const a = document.createElement('a');
-              a.href = `data:${att.type};base64,${att.content}`;
-              a.download = att.name;
-              a.click();
-            }
-          });
-        });
-      } else {
-        attachmentsContainer.innerHTML = '';
-      }
-
-      // Card visibility logic
-      if (!data.partyA?.consented && currentParty === 'A') {
-        consentCard.classList.remove('hidden');
-        intakeCard.classList.add('hidden');
-        classificationCard.classList.add('hidden');
-        shareCard.classList.add('hidden');
-        negotiationCard.classList.add('hidden');
-      } else if (!data.partyB?.consented && currentParty === 'B') {
-        consentCard.classList.remove('hidden');
-        intakeCard.classList.add('hidden');
-        classificationCard.classList.add('hidden');
-        shareCard.classList.add('hidden');
-        negotiationCard.classList.add('hidden');
-        if (data.disputeText && !document.querySelector('.message.system.dispute-summary')) {
-          addMessageToChat('system', `Dispute: ${data.disputeText}`);
-        }
-      } else if (data.classification && (!data.partyB?.consented || currentParty === 'A')) {
-        classificationCard.classList.remove('hidden');
-        shareCard.classList.remove('hidden');
-        intakeCard.classList.add('hidden');
-        consentCard.classList.add('hidden');
-        negotiationCard.classList.add('hidden');
-        classificationDisplay.innerHTML = `
-          <p><strong>Domain:</strong> ${data.classification.domain}</p>
-          <p><strong>Issues:</strong> ${data.classification.issues.join(', ')}</p>
-          <p><strong>Recommendation:</strong> ${data.classification.recommendedPathway}</p>
-        `;
-        const shareUrl = `${window.location.origin}${window.location.pathname}?dispute=${currentDisputeId}&party=B`;
-        shareLink.textContent = shareUrl;
-      } else if (data.partyA?.consented && data.partyB?.consented) {
-        consentCard.classList.add('hidden');
-        intakeCard.classList.add('hidden');
-        classificationCard.classList.add('hidden');
-        shareCard.classList.add('hidden');
-        negotiationCard.classList.remove('hidden');
-        messageInput.disabled = false;
-        sendButton.disabled = false;
-
-        if (data.options && data.options.length) {
-          const optionsHtml = data.options.map((opt, idx) => 
-            `<li class="${data.selectedOption === idx ? 'selected' : ''}" data-opt-index="${idx}">${opt.description} ${opt.stake ? ' ($' + opt.stake + ')' : ''}</li>`
-          ).join('');
-          optionsContainer.innerHTML = `<ul class="options-list">${optionsHtml}</ul>`;
-          document.querySelectorAll('.options-list li').forEach(li => {
-            li.addEventListener('click', () => selectOption(parseInt(li.dataset.optIndex)));
-          });
-        }
-        if (data.settlementText) {
-          agreementContainer.innerHTML = `<div class="agreement-preview">${data.settlementText}</div>`;
-        }
-      }
-    }
-
-    // ---------- Event Handlers ----------
-    document.getElementById('consentBtn').addEventListener('click', async () => {
-      if (!currentDisputeId) {
-        // No dispute yet – create one (user is initiating as Party A)
-        const id = crypto.randomUUID();
-        const ref = doc(db, 'disputes', id);
-        const disputeData = {
-          createdAt: serverTimestamp(),
-          status: 'intake',
-          partyA: { sessionId: sessionId, consented: true },
-          partyB: { sessionId: null, consented: false },
-          disputeText: '',
-          classification: null,
-          statements: [],
-          options: [],
-          selectedOption: null,
-          settlementText: '',
-          attachments: []
-        };
-        await setDoc(ref, disputeData);
-        loadDispute(id, 'A');
-      } else {
-        // Existing dispute – record consent for current party
-        if (currentParty === 'A') {
-          await updateDoc(currentDisputeRef, { 'partyA.consented': true });
-        } else {
-          await updateDoc(currentDisputeRef, { 'partyB.consented': true, 'partyB.sessionId': sessionId });
-        }
-      }
-    });
-
-    document.getElementById('declineBtn').addEventListener('click', () => {
-      addMessageToChat('system', 'Consent declined. Cannot proceed without consent.');
-      consentCard.classList.add('hidden');
-    });
-
-    document.getElementById('classifyBtn').addEventListener('click', async () => {
-      const text = disputeInput.value.trim();
-      if (!text) return;
-      const classification = await callGroqClassification(text);
-      // Also generate a short title for the dispute
-      const title = await generateTitle(text);
-      await updateDoc(currentDisputeRef, { disputeText: text, classification, title });
-    });
-
-    document.getElementById('proceedBtn').addEventListener('click', () => {
-      // share card already visible
-    });
-
-    document.getElementById('copyLinkBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText(shareLink.textContent);
-      alert('Link copied to clipboard');
-    });
-
-    document.getElementById('getOptionsBtn').addEventListener('click', async () => {
-      const snap = await getDoc(currentDisputeRef);
-      const data = snap.data();
-      const options = await callGroqOptions(data.disputeText, data.statements);
-      await updateDoc(currentDisputeRef, { options });
-    });
-
-    async function selectOption(index) {
-      await updateDoc(currentDisputeRef, { selectedOption: index });
-    }
-
-    document.getElementById('generateAgreementBtn').addEventListener('click', async () => {
-      const snap = await getDoc(currentDisputeRef);
-      const data = snap.data();
-      if (!data.options || data.selectedOption === null) {
-        alert('Please generate and select an option first');
-        return;
-      }
-      const agreement = await callGroqAgreement(data.disputeText, data.options[data.selectedOption].description);
-      await updateDoc(currentDisputeRef, { settlementText: agreement });
-    });
-
-    document.getElementById('deleteDataBtn').addEventListener('click', async () => {
-      if (confirm('Delete all data for this dispute? This cannot be undone.')) {
-        await updateDoc(currentDisputeRef, { deleted: true });
-        // redirect to base
-        window.location.href = window.location.pathname;
-      }
-    });
-
-    // File attachment
-    attachButton.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', async (e) => {
-      if (!currentDisputeRef) {
-        alert('Please start a dispute first');
-        return;
-      }
-      const files = Array.from(e.target.files);
-      for (const file of files) {
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-          const base64 = ev.target.result.split(',')[1];
-          const attachment = { name: file.name, type: file.type, content: base64, size: file.size };
-          await updateDoc(currentDisputeRef, { attachments: arrayUnion(attachment) });
-          addMessageToChat('user', `📎 Attached: ${file.name}`, true);
-          addMessageToFirestore('user', `📎 Attached: ${file.name}`, true);
-        };
-        reader.readAsDataURL(file);
-      }
-      fileInput.value = '';
-    });
-
-    // Send message (using Groq)
-    sendButton.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-
-    async function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-      addMessageToChat('user', text);
-      messageInput.value = '';
-      await addMessageToFirestore('user', text);
-
-      // Update statements
-      await updateDoc(currentDisputeRef, {
-        statements: arrayUnion({ party: currentParty, text, timestamp: new Date().toISOString() })
-      });
-
-      // Fetch last 20 messages for context
-      const messagesQuery = query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20));
-      const snap = await getDocs(messagesQuery);
-      const history = snap.docs.map(d => {
-        const role = d.data().sender === 'user' ? 'user' : 'assistant';
-        return { role, content: d.data().text };
-      });
-
-      const systemPrompt = 'You are an impartial AI mediator. Facilitate communication, ask clarifying questions, suggest constructive approaches. Never give legal advice. Be neutral and respectful.';
-      const messages = [{ role: 'system', content: systemPrompt }, ...history];
-
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7 })
-      });
-      const data = await response.json();
-      const reply = data.choices[0].message.content;
-
-      addMessageToChat('bot', reply);
-      await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
-        sender: 'bot',
-        text: reply,
-        timestamp: serverTimestamp()
-      });
-    }
-
-    // ---------- New Dispute ----------
-    newDisputeBtn.addEventListener('click', async () => {
-      const id = crypto.randomUUID();
-      const ref = doc(db, 'disputes', id);
-      const disputeData = {
-        createdAt: serverTimestamp(),
-        status: 'intake',
-        partyA: { sessionId: sessionId, consented: true },
-        partyB: { sessionId: null, consented: false },
-        disputeText: '',
-        classification: null,
-        statements: [],
-        options: [],
-        selectedOption: null,
-        settlementText: '',
-        attachments: []
-      };
-      await setDoc(ref, disputeData);
-      loadDispute(id, 'A');
-    });
-
-    // ---------- Groq Helpers ----------
-    async function callGroqClassification(text) {
-      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          messages: [
-            { role: 'system', content: 'You are a dispute classifier. Return JSON with fields: domain, issues (array), recommendedPathway.' },
-            { role: 'user', content: text }
-          ],
-          temperature: 0.1,
-          response_format: { type: 'json_object' }
-        })
-      });
-      const data = await resp.json();
-      return JSON.parse(data.choices[0].message.content);
-    }
-
-    async function generateTitle(text) {
-      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          messages: [
-            { role: 'system', content: 'Generate a very short title (max 6 words) for this dispute. Only output the title, nothing else.' },
-            { role: 'user', content: text }
-          ],
-          temperature: 0.3,
-          max_tokens: 20
-        })
-      });
-      const data = await resp.json();
-      return data.choices[0].message.content.trim();
-    }
-
-    async function callGroqOptions(disputeText, statements) {
-      const prompt = `Based on this dispute: "${disputeText}" and statements: ${JSON.stringify(statements)}, suggest three fair settlement options. Return JSON array with objects: { description: string, stake: number | null }.`;
-      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.3,
-          response_format: { type: 'json_object' }
-        })
-      });
-      const data = await resp.json();
-      return JSON.parse(data.choices[0].message.content).options;
-    }
-
-    async function callGroqAgreement(disputeText, optionDesc) {
-      const prompt = `Write a simple, non-binding settlement agreement for the following dispute and agreed terms. Use plain language and include placeholders for names and signatures.\nDispute: ${disputeText}\nAgreed terms: ${optionDesc}`;
-      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.3
-        })
-      });
-      const data = await resp.json();
-      return data.choices[0].message.content;
-    }
-
-    // ---------- Initial load ----------
-    window.addEventListener('load', async () => {
-      if (invitedDisputeId) {
-        // open invited dispute
-        await loadDispute(invitedDisputeId, invitedParty || 'B');
-      } else {
-        // load dispute list
-        await loadDisputeList();
-        // Hide all cards initially
-        consentCard.classList.add('hidden');
-        intakeCard.classList.add('hidden');
-        classificationCard.classList.add('hidden');
-        shareCard.classList.add('hidden');
-        negotiationCard.classList.add('hidden');
-        // Show a welcome message
-      }
-    });
-
-    // PWA manifest (unchanged)
-    const manifest = {
-      name: 'AURUM Dispute Mediator',
-      short_name: 'AURUM',
-      start_url: '/',
-      display: 'standalone',
-      background_color: '#f8fafc',
-      theme_color: '#2563eb',
-      icons: [{
-        src: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%232A2A2A\'/%3E%3Cpath d=\'M30 35 L70 35 L70 65 L30 65 Z\' fill=\'none\' stroke=\'%23E0E0E0\' stroke-width=\'4\'/%3E%3Ctext x=\'32\' y=\'68\' font-size=\'44\' fill=\'%23E0E0E0\' font-family=\'Arial\'%3E⚖️%3C/text%3E%3C/svg%3E',
-        sizes: '192x192',
-        type: 'image/svg+xml'
-      }]
-    };
-    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = URL.createObjectURL(manifestBlob);
-    document.head.appendChild(link);
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
-  </script>
+  window.addEventListener('load', async () => { if (invitedDisputeId) await loadDispute(invitedDisputeId, invitedParty || 'B'); else await loadDisputeList(); });
+</script>
 </body>
 </html>
