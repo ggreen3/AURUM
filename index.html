@@ -140,6 +140,14 @@
     firebaseAvailable = true;
     document.getElementById('firebaseStatus').innerHTML = '✅ Firebase connected';
     document.getElementById('firebaseStatus').className = 'status-badge success';
+    // Quick test: try to write a test doc to check permissions
+    const testRef = doc(db, 'test', 'test');
+    setDoc(testRef, { test: true }).catch(err => {
+      console.warn("Firestore permission test failed:", err);
+      document.getElementById('firebaseStatus').innerHTML = '⚠️ Firebase connected but permissions denied. Check rules.';
+      document.getElementById('firebaseStatus').className = 'status-badge error';
+      alert("Firebase rules are restricting access. Please set rules to allow read/write for testing (see instructions).");
+    });
   } catch (e) {
     console.error("Firebase init error:", e);
     document.getElementById('firebaseStatus').innerHTML = '❌ Firebase failed – using localStorage';
@@ -220,7 +228,7 @@
       await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
         sender, text, timestamp: serverTimestamp(), party: currentParty, type: isAttachment ? 'attachment' : 'text'
       });
-    } catch (e) { console.warn("Message write failed", e); }
+    } catch (e) { console.warn("Message write failed", e); alert("Failed to send message: " + e.message); }
   }
 
   // Load dispute list
@@ -230,11 +238,16 @@
       renderDisputeList(disputes);
       return;
     }
-    const q1 = query(collection(db, 'disputes'), where('partyA.sessionId', '==', sessionId));
-    const q2 = query(collection(db, 'disputes'), where('partyB.sessionId', '==', sessionId));
-    const [snapA, snapB] = await Promise.all([getDocs(q1), getDocs(q2)]);
-    const disputes = [...snapA.docs, ...snapB.docs].map(d => ({ id: d.id, ...d.data() }));
-    renderDisputeList(disputes);
+    try {
+      const q1 = query(collection(db, 'disputes'), where('partyA.sessionId', '==', sessionId));
+      const q2 = query(collection(db, 'disputes'), where('partyB.sessionId', '==', sessionId));
+      const [snapA, snapB] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      const disputes = [...snapA.docs, ...snapB.docs].map(d => ({ id: d.id, ...d.data() }));
+      renderDisputeList(disputes);
+    } catch (e) {
+      console.error("loadDisputeList error", e);
+      alert("Error loading disputes: " + e.message);
+    }
   }
 
   function renderDisputeList(disputes) {
@@ -266,13 +279,13 @@
     window.history.pushState({}, '', url);
     unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
       if (snap.exists()) updateUIFromDispute(snap.data());
-    });
+    }, (err) => { console.error("Snapshot error", err); alert("Error listening to dispute: " + err.message); });
     const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(100));
     unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
       chatMessagesDiv.innerHTML = '';
       snap.forEach(d => addMessageToChat(d.data().sender, d.data().text, d.data().type === 'attachment'));
       if (chatMessagesDiv.children.length === 0) addMessageToChat('system', 'Negotiation channel ready.');
-    });
+    }, (err) => { console.error("Messages snapshot error", err); });
     loadDisputeList();
   }
 
@@ -314,9 +327,13 @@
     }
   }
 
-  async function selectOption(idx) { await updateDoc(currentDisputeRef, { selectedOption: idx }); }
+  async function selectOption(idx) {
+    try {
+      await updateDoc(currentDisputeRef, { selectedOption: idx });
+    } catch (e) { alert("Failed to select option: " + e.message); }
+  }
 
-  // ----- AI mock/fallback helpers -----
+  // ----- AI mock/fallback helpers (unchanged) -----
   async function callGroq(prompt, systemMsg = 'You are a neutral assistant.', temp = 0.3, json = false) {
     const messages = [{ role: 'system', content: systemMsg }, { role: 'user', content: prompt }];
     const body = { model: GROQ_MODEL, messages, temperature: temp, max_tokens: 800 };
@@ -369,7 +386,7 @@
     return res || "Thank you for sharing. Remember, any suggestions I make are non-binding. What would feel fair?";
   }
 
-  // ----- Event handlers -----
+  // ----- Event handlers with error handling -----
   newDisputeBtn.addEventListener('click', async () => {
     const id = crypto.randomUUID();
     const disputeData = {
@@ -379,18 +396,25 @@
       partyB: { sessionId: null, consented: false },
       disputeText: '', classification: null, statements: [], options: [], selectedOption: null, settlementText: '', attachments: [], humanEscalation: false
     };
-    await setDoc(doc(db, 'disputes', id), disputeData);
-    loadDispute(id, 'A');
+    try {
+      await setDoc(doc(db, 'disputes', id), disputeData);
+      loadDispute(id, 'A');
+    } catch (e) {
+      console.error("New dispute error:", e);
+      alert("Failed to create dispute: " + e.message + "\n\nCheck Firebase rules (should allow read/write).");
+    }
   });
 
   document.getElementById('consentBtn').addEventListener('click', async () => {
     const storageConsent = document.getElementById('consentStorage').checked;
     if (!storageConsent) { alert('Storage consent required.'); return; }
     if (!currentDisputeRef) { alert('No dispute loaded.'); return; }
-    const updates = currentParty === 'A'
-      ? { 'partyA.consented': true, 'partyA.storageConsent': true, 'partyA.trainingConsent': document.getElementById('consentTraining').checked }
-      : { 'partyB.consented': true, 'partyB.sessionId': sessionId };
-    await updateDoc(currentDisputeRef, updates);
+    try {
+      const updates = currentParty === 'A'
+        ? { 'partyA.consented': true, 'partyA.storageConsent': true, 'partyA.trainingConsent': document.getElementById('consentTraining').checked }
+        : { 'partyB.consented': true, 'partyB.sessionId': sessionId };
+      await updateDoc(currentDisputeRef, updates);
+    } catch (e) { alert("Failed to save consent: " + e.message); }
   });
   document.getElementById('declineBtn').addEventListener('click', () => alert('Consent required to proceed.'));
   classifyBtn.addEventListener('click', async () => {
@@ -398,50 +422,64 @@
     if (!text) return;
     const classification = await classifyDispute(text);
     const title = await generateTitle(text);
-    await updateDoc(currentDisputeRef, { disputeText: text, classification, title });
+    try {
+      await updateDoc(currentDisputeRef, { disputeText: text, classification, title });
+    } catch (e) { alert("Failed to classify: " + e.message); }
   });
   proceedBtn.addEventListener('click', () => {});
   copyLinkBtn.addEventListener('click', () => { navigator.clipboard.writeText(shareLinkDiv.textContent); alert('Link copied'); });
   getOptionsBtn.addEventListener('click', async () => {
-    const snap = await getDoc(currentDisputeRef);
-    const data = snap.data();
-    const opts = await generateOptions(data.disputeText, data.statements || []);
-    await updateDoc(currentDisputeRef, { options: opts, selectedOption: null });
+    try {
+      const snap = await getDoc(currentDisputeRef);
+      const data = snap.data();
+      const opts = await generateOptions(data.disputeText, data.statements || []);
+      await updateDoc(currentDisputeRef, { options: opts, selectedOption: null });
+    } catch (e) { alert("Failed to generate options: " + e.message); }
   });
   generateAgreementBtn.addEventListener('click', async () => {
-    const snap = await getDoc(currentDisputeRef);
-    const data = snap.data();
-    if (!data.options || data.selectedOption === null) { alert('Generate and select an option first.'); return; }
-    const agreement = await generateAgreement(data.disputeText, data.options[data.selectedOption].description);
-    await updateDoc(currentDisputeRef, { settlementText: agreement });
+    try {
+      const snap = await getDoc(currentDisputeRef);
+      const data = snap.data();
+      if (!data.options || data.selectedOption === null) { alert('Generate and select an option first.'); return; }
+      const agreement = await generateAgreement(data.disputeText, data.options[data.selectedOption].description);
+      await updateDoc(currentDisputeRef, { settlementText: agreement });
+    } catch (e) { alert("Failed to generate agreement: " + e.message); }
   });
   withdrawConsentBtn.addEventListener('click', async () => {
     if (confirm('Withdraw consent? You will no longer see dispute details until you re-consent.')) {
-      const updates = currentParty === 'A' ? { 'partyA.consented': false } : { 'partyB.consented': false };
-      await updateDoc(currentDisputeRef, updates);
+      try {
+        const updates = currentParty === 'A' ? { 'partyA.consented': false } : { 'partyB.consented': false };
+        await updateDoc(currentDisputeRef, updates);
+      } catch (e) { alert("Failed to withdraw consent: " + e.message); }
     }
   });
   deleteDataBtn.addEventListener('click', async () => {
     if (confirm('Delete all data for this dispute? Cannot be undone.')) {
-      await updateDoc(currentDisputeRef, { deleted: true, disputeText: deleteField(), statements: deleteField(), options: deleteField(), settlementText: deleteField() });
-      window.location.href = window.location.pathname;
+      try {
+        await updateDoc(currentDisputeRef, { deleted: true, disputeText: deleteField(), statements: deleteField(), options: deleteField(), settlementText: deleteField() });
+        window.location.href = window.location.pathname;
+      } catch (e) { alert("Failed to delete data: " + e.message); }
     }
   });
   humanEscalateBtn.addEventListener('click', async () => {
-    await updateDoc(currentDisputeRef, { humanEscalation: true });
-    addMessageToChat('system', 'Human mediator has been requested.');
-    await addMessageToFirestore('system', 'A party requested human mediator intervention.', false);
+    try {
+      await updateDoc(currentDisputeRef, { humanEscalation: true });
+      addMessageToChat('system', 'Human mediator has been requested.');
+      await addMessageToFirestore('system', 'A party requested human mediator intervention.', false);
+    } catch (e) { alert("Failed to request human mediator: " + e.message); }
   });
   guidedNegotiationBtn.addEventListener('click', async () => {
-    const snap = await getDoc(currentDisputeRef);
-    const data = snap.data();
-    if (!data.statements || data.statements.length < 2) {
-      addMessageToChat('system', 'Guided negotiation: please both parties share your perspectives via chat first.');
-      return;
-    }
-    const summary = await generateSummary(data.statements);
-    addMessageToChat('system', `📋 Summary of agreements/disagreements:\n${summary}`);
-    await addMessageToFirestore('system', `Summary generated: ${summary}`, false);
+    try {
+      const snap = await getDoc(currentDisputeRef);
+      const data = snap.data();
+      if (!data.statements || data.statements.length < 2) {
+        addMessageToChat('system', 'Guided negotiation: please both parties share your perspectives via chat first.');
+        return;
+      }
+      const summary = await generateSummary(data.statements);
+      addMessageToChat('system', `📋 Summary of agreements/disagreements:\n${summary}`);
+      await addMessageToFirestore('system', `Summary generated: ${summary}`, false);
+    } catch (e) { alert("Failed to generate summary: " + e.message); }
   });
 
   async function sendMessage() {
@@ -450,15 +488,17 @@
     addMessageToChat('user', text);
     await addMessageToFirestore('user', text);
     messageInput.value = '';
-    const snap = await getDoc(currentDisputeRef);
-    const statements = snap.data().statements || [];
-    statements.push({ party: currentParty, text, timestamp: new Date().toISOString() });
-    await updateDoc(currentDisputeRef, { statements });
-    const msgsSnap = await getDocs(query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20)));
-    const history = msgsSnap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
-    const reply = await botReply(text, history);
-    addMessageToChat('bot', reply);
-    await addMessageToFirestore('bot', reply, false);
+    try {
+      const snap = await getDoc(currentDisputeRef);
+      const statements = snap.data().statements || [];
+      statements.push({ party: currentParty, text, timestamp: new Date().toISOString() });
+      await updateDoc(currentDisputeRef, { statements });
+      const msgsSnap = await getDocs(query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20)));
+      const history = msgsSnap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
+      const reply = await botReply(text, history);
+      addMessageToChat('bot', reply);
+      await addMessageToFirestore('bot', reply, false);
+    } catch (e) { console.warn("Error in sendMessage", e); alert("Failed to process message: " + e.message); }
   }
   sendButton.addEventListener('click', sendMessage);
   messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
@@ -468,10 +508,12 @@
     for (const file of e.target.files) {
       const reader = new FileReader();
       reader.onload = async (ev) => {
-        const base64 = ev.target.result.split(',')[1];
-        await updateDoc(currentDisputeRef, { attachments: arrayUnion({ name: file.name, type: file.type, content: base64, size: file.size }) });
-        addMessageToChat('user', `📎 Attached: ${file.name}`, true);
-        await addMessageToFirestore('user', `📎 Attached: ${file.name}`, true);
+        try {
+          const base64 = ev.target.result.split(',')[1];
+          await updateDoc(currentDisputeRef, { attachments: arrayUnion({ name: file.name, type: file.type, content: base64, size: file.size }) });
+          addMessageToChat('user', `📎 Attached: ${file.name}`, true);
+          await addMessageToFirestore('user', `📎 Attached: ${file.name}`, true);
+        } catch (e) { alert("Failed to attach file: " + e.message); }
       };
       reader.readAsDataURL(file);
     }
