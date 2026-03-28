@@ -2,39 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURUM · Algorithmic ADR Prototype</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
       --bg: #f8fafc; --surface: #ffffff; --surface-secondary: #f1f4f9;
       --border: #e2e8f0; --text-primary: #1e293b; --text-secondary: #475569;
-      --text-muted: #64748b; --accent: #2563eb; --success: #10b981;
-      --warning: #f59e0b; --danger: #ef4444;
+      --accent: #2563eb; --success: #10b981; --danger: #ef4444;
       --radius-md: 20px; --radius-sm: 12px;
     }
-    body { background: var(--bg); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; padding: 1rem; }
+    body { background: var(--bg); font-family: system-ui, sans-serif; padding: 1rem; }
     .app { max-width: 1400px; margin: 0 auto; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
     .logo-text { font-size: 1.6rem; font-weight: 350; font-family: 'Times New Roman', serif; }
-    .main-grid { display: grid; grid-template-columns: 280px 1fr 360px; gap: 1.5rem; }
+    .status-badge { padding: 0.2rem 0.8rem; border-radius: 2rem; font-size: 0.8rem; background: #e2e8f0; }
+    .status-badge.success { background: #d1fae5; color: #065f46; }
+    .status-badge.error { background: #fee2e2; color: #991b1b; }
+    .main-grid { display: grid; grid-template-columns: 280px 1fr 360px; gap: 1.5rem; margin-top: 1rem; }
     @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } .left-sidebar { order: -1; } }
-    .left-sidebar, .chat-panel, .right-panel .card { background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--border); padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .chat-panel { display: flex; flex-direction: column; height: 70vh; padding: 0; overflow: hidden; }
+    .left-sidebar, .chat-panel, .right-panel .card {
+      background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--border);
+      padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .chat-panel { display: flex; flex-direction: column; height: 65vh; padding: 0; overflow: hidden; }
     .chat-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
     .chat-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem; }
     .message { max-width: 80%; padding: 0.6rem 1rem; border-radius: 1.5rem; word-wrap: break-word; }
     .message.user { align-self: flex-end; background: var(--accent); color: white; }
     .message.bot { align-self: flex-start; background: var(--surface-secondary); border: 1px solid var(--border); }
-    .message.system { align-self: center; background: transparent; color: var(--text-muted); font-style: italic; border: 1px dashed var(--border); max-width: 90%; }
+    .message.system { align-self: center; background: transparent; color: #64748b; font-style: italic; border: 1px dashed var(--border); max-width: 90%; }
     .chat-input-area { display: flex; gap: 0.5rem; padding: 1rem; border-top: 1px solid var(--border); }
     .chat-input-area input { flex: 1; padding: 0.6rem 1rem; border-radius: 2rem; border: 1px solid var(--border); background: var(--surface-secondary); }
     .chat-input-area button { background: var(--accent); color: white; border: none; border-radius: 2rem; padding: 0 1.5rem; cursor: pointer; }
     .btn { padding: 0.4rem 1rem; border-radius: 2rem; border: 1px solid var(--border); background: white; cursor: pointer; transition: 0.2s; }
     .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
     .btn-outline { background: transparent; }
-    .btn-success { background: var(--success); color: white; }
-    .btn-warning { background: var(--warning); color: white; }
     .right-panel { display: flex; flex-direction: column; gap: 1rem; }
     .card { margin-bottom: 0; }
     .options-list li { background: var(--surface-secondary); margin: 0.5rem 0; padding: 0.8rem; border-radius: var(--radius-sm); border-left: 4px solid transparent; cursor: pointer; }
@@ -42,14 +45,16 @@
     .legitimacy-check { display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.8rem; }
     .hidden { display: none; }
     .share-link { background: var(--surface-secondary); padding: 0.5rem; font-family: monospace; font-size: 0.8rem; word-break: break-all; border-radius: var(--radius-sm); }
-    .error-banner { background: #fee2e2; border-left: 4px solid var(--danger); padding: 0.5rem; margin-bottom: 1rem; border-radius: var(--radius-sm); font-size: 0.8rem; }
+    .error-message { color: var(--danger); background: #fee2e2; padding: 0.5rem; border-radius: var(--radius-sm); margin-top: 0.5rem; font-size: 0.8rem; }
   </style>
 </head>
 <body>
 <div class="app">
-  <header><div class="logo-text">⚖️ AURUM · algorithmic ADR prototype</div><small>non‑determinacy · explainability · reversibility</small></header>
+  <header>
+    <div class="logo-text">⚖️ AURUM · algorithmic ADR prototype</div>
+    <div id="firebaseStatus" class="status-badge error">⏳ Initializing...</div>
+  </header>
   <div class="main-grid">
-    <!-- Left sidebar: dispute list -->
     <div class="left-sidebar">
       <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
         <strong>📁 your disputes</strong>
@@ -58,10 +63,9 @@
       <div id="disputeList"></div>
     </div>
 
-    <!-- Center: chat panel -->
     <div class="chat-panel">
       <div class="chat-header"><span>💬 AI‑assisted negotiation</span><span id="partyBadge">—</span></div>
-      <div class="chat-messages" id="chatMessages"><div class="message system">Welcome. Create a dispute or open an existing one.</div></div>
+      <div class="chat-messages" id="chatMessages"><div class="message system">Create a dispute or open an existing one.</div></div>
       <div class="chat-input-area">
         <input type="text" id="messageInput" placeholder="Type a message..." disabled>
         <button id="sendButton" disabled>Send</button>
@@ -70,26 +74,20 @@
       </div>
     </div>
 
-    <!-- Right panel -->
     <div class="right-panel">
       <div class="card"><h3>🔍 legitimacy framework</h3><div id="legitimacyChecks"></div></div>
-
       <div class="card" id="consentCard">
         <h3>🔐 informed consent</h3>
-        <div class="consent-box" style="background: var(--surface-secondary); padding: 1rem; border-left: 3px solid var(--accent);">
-          <p>AURUM is an AI assistant, not a lawyer or mediator. No legal advice. Data stored securely.</p>
+        <div style="background: var(--surface-secondary); padding: 1rem; border-left: 3px solid var(--accent);">
+          <p>AURUM is an AI assistant, not a lawyer/mediator. No legal advice. Data stored securely.</p>
           <label><input type="checkbox" id="consentStorage"> I consent to data storage for dispute resolution</label><br>
           <label><input type="checkbox" id="consentTraining"> I consent to anonymized data for model improvement (optional)</label>
           <div style="margin-top: 1rem;"><button class="btn btn-primary" id="consentBtn">I consent</button> <button class="btn btn-outline" id="declineBtn">I do not consent</button></div>
         </div>
       </div>
-
       <div class="card hidden" id="intakeCard"><h3>📋 describe the dispute</h3><textarea id="disputeInput" rows="3" style="width:100%; padding:0.5rem;"></textarea><button class="btn btn-primary" id="classifyBtn" style="margin-top:0.5rem;">analyze dispute</button></div>
-
       <div class="card hidden" id="classificationCard"><h3>🔍 analysis</h3><div id="classificationDisplay"></div><button class="btn btn-success" id="proceedBtn">proceed to negotiation</button></div>
-
       <div class="card hidden" id="shareCard"><h3>🔗 invite other party</h3><div class="share-link" id="shareLink"></div><button class="btn btn-outline" id="copyLinkBtn">copy link</button></div>
-
       <div class="card hidden" id="negotiationCard">
         <h3>⚙️ negotiation tools</h3>
         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
@@ -104,11 +102,10 @@
         <div id="attachmentsContainer"></div>
         <hr><button class="btn btn-outline" id="deleteDataBtn">delete my data</button>
       </div>
-
       <div class="card"><h3>👥 parties</h3><div>Party A: <span id="partyAStatus">—</span> &nbsp; Party B: <span id="partyBStatus">—</span></div><div id="escalationStatus" style="font-size:0.8rem;"></div></div>
+      <button id="fallbackModeBtn" class="btn btn-outline" style="background:#f1f4f9;">⚠️ Switch to offline mode</button>
     </div>
   </div>
-  <footer style="margin-top: 2rem; text-align: center; color: var(--text-muted);">AURUM · algorithmic ADR prototype</footer>
 </div>
 
 <script type="importmap">
@@ -124,32 +121,55 @@
   import { initializeApp } from 'firebase/app';
   import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, deleteField } from 'firebase/firestore';
 
+  // ---------- CONFIG ----------
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyDu-dywLoaxALdebvZdjfxA83nHBuvFBGE",
     authDomain: "aurum-dispute-resolution.firebaseapp.com",
     projectId: "aurum-dispute-resolution",
     storageBucket: "aurum-dispute-resolution.firebasestorage.app",
     messagingSenderId: "728479269779",
-    appId: "1:728479269779:web:27b9cdef6c9458e5ff1e66",
-    measurementId: "G-T6S07C9CX1"
+    appId: "1:728479269779:web:27b9cdef6c9458e5ff1e66"
   };
   const GROQ_API_KEY = "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";
   const GROQ_MODEL = "llama-3.3-70b-versatile";
 
-  let db;
+  let db, firebaseAvailable = false;
   try {
     const app = initializeApp(FIREBASE_CONFIG);
     db = getFirestore(app);
-    console.log("Firebase ready");
+    firebaseAvailable = true;
+    document.getElementById('firebaseStatus').innerHTML = '✅ Firebase connected';
+    document.getElementById('firebaseStatus').className = 'status-badge success';
   } catch (e) {
-    alert("Firebase init failed – check console");
-    throw e;
+    console.error("Firebase init error:", e);
+    document.getElementById('firebaseStatus').innerHTML = '❌ Firebase failed – using localStorage';
+    document.getElementById('firebaseStatus').className = 'status-badge error';
+    firebaseAvailable = false;
+    // fallback storage
+    window.localStorageDB = { disputes: {}, messages: {} };
+    db = {
+      doc: (path) => ({ id: path.split('/').pop() }),
+      setDoc: async (ref, data) => { window.localStorageDB.disputes[ref.id] = data; return true; },
+      getDoc: async (ref) => ({ exists: () => !!window.localStorageDB.disputes[ref.id], data: () => window.localStorageDB.disputes[ref.id] }),
+      updateDoc: async (ref, updates) => { if (window.localStorageDB.disputes[ref.id]) Object.assign(window.localStorageDB.disputes[ref.id], updates); return true; },
+      onSnapshot: (ref, cb) => { cb({ exists: () => !!window.localStorageDB.disputes[ref.id], data: () => window.localStorageDB.disputes[ref.id] }); return () => {}; },
+      collection: () => ({}),
+      addDoc: async (colRef, data) => { const id = crypto.randomUUID(); const path = colRef.path || 'messages'; if (!window.localStorageDB.messages[path]) window.localStorageDB.messages[path] = []; window.localStorageDB.messages[path].push({ id, ...data }); return { id }; },
+      getDocs: async (q) => {
+        const path = q._firestoreClient?.databaseId?.projectId ? 'unknown' : '';
+        const msgs = window.localStorageDB.messages[path] || [];
+        return { docs: msgs.map(m => ({ data: () => m })) };
+      },
+      query: () => ({}), where: () => ({}), orderBy: () => ({}), limit: () => ({}),
+      serverTimestamp: () => new Date().toISOString(),
+      deleteField: () => null
+    };
   }
 
   const sessionId = localStorage.getItem('sessionId') || crypto.randomUUID();
   localStorage.setItem('sessionId', sessionId);
 
-  // DOM elements
+  // ---------- DOM elements ----------
   const disputeListDiv = document.getElementById('disputeList');
   const newDisputeBtn = document.getElementById('newDisputeBtn');
   const chatMessagesDiv = document.getElementById('chatMessages');
@@ -181,11 +201,12 @@
   const humanEscalateBtn = document.getElementById('humanEscalateBtn');
   const guidedNegotiationBtn = document.getElementById('guidedNegotiationBtn');
   const legitimacyChecksDiv = document.getElementById('legitimacyChecks');
+  const fallbackModeBtn = document.getElementById('fallbackModeBtn');
 
   let currentDisputeId = null, currentDisputeRef = null, currentParty = null;
   let unsubscribeDispute = null, unsubscribeMessages = null;
 
-  // Helper: add message to UI and Firestore
+  // Helper functions (add message)
   function addMessageToChat(sender, text, isAttachment = false) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${sender}`;
@@ -195,17 +216,28 @@
   }
   async function addMessageToFirestore(sender, text, isAttachment = false) {
     if (!currentDisputeRef) return;
-    await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
-      sender, text, timestamp: serverTimestamp(), party: currentParty, type: isAttachment ? 'attachment' : 'text'
-    });
+    try {
+      await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
+        sender, text, timestamp: serverTimestamp(), party: currentParty, type: isAttachment ? 'attachment' : 'text'
+      });
+    } catch (e) { console.warn("Message write failed", e); }
   }
 
-  // Load list of disputes for this session
+  // Load dispute list
   async function loadDisputeList() {
+    if (!firebaseAvailable) {
+      const disputes = Object.values(window.localStorageDB.disputes).filter(d => d.partyA?.sessionId === sessionId || d.partyB?.sessionId === sessionId);
+      renderDisputeList(disputes);
+      return;
+    }
     const q1 = query(collection(db, 'disputes'), where('partyA.sessionId', '==', sessionId));
     const q2 = query(collection(db, 'disputes'), where('partyB.sessionId', '==', sessionId));
     const [snapA, snapB] = await Promise.all([getDocs(q1), getDocs(q2)]);
     const disputes = [...snapA.docs, ...snapB.docs].map(d => ({ id: d.id, ...d.data() }));
+    renderDisputeList(disputes);
+  }
+
+  function renderDisputeList(disputes) {
     disputeListDiv.innerHTML = disputes.map(d => `
       <div class="dispute-list-item" style="background: var(--surface-secondary); margin-bottom: 0.5rem; padding: 0.5rem; border-radius: 12px; cursor: pointer;" data-id="${d.id}">
         <div><strong>${d.title || d.disputeText?.slice(0,30) || 'Dispute'}</strong></div>
@@ -221,7 +253,6 @@
     });
   }
 
-  // Load a specific dispute
   async function loadDispute(disputeId, party) {
     if (unsubscribeDispute) unsubscribeDispute();
     if (unsubscribeMessages) unsubscribeMessages();
@@ -229,16 +260,13 @@
     currentParty = party;
     currentDisputeRef = doc(db, 'disputes', disputeId);
     partyBadge.textContent = `Party ${party}`;
-    // Update URL
     const url = new URL(window.location);
     url.searchParams.set('dispute', disputeId);
     url.searchParams.set('party', party);
     window.history.pushState({}, '', url);
-    // Real-time dispute snapshot
     unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
       if (snap.exists()) updateUIFromDispute(snap.data());
     });
-    // Messages snapshot
     const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(100));
     unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
       chatMessagesDiv.innerHTML = '';
@@ -252,48 +280,31 @@
     partyAStatus.textContent = data.partyA?.consented ? '✅ consented' : '⏳ pending';
     partyBStatus.textContent = data.partyB?.consented ? '✅ consented' : '⏳ pending';
     document.getElementById('escalationStatus').innerHTML = data.humanEscalation ? '🕊️ Human mediator requested' : '';
-
-    const nonDet = true;
-    const expl = data.classification?.explanation ? true : false;
-    const rev = true;
+    const nonDet = true, expl = data.classification?.explanation ? true : false, rev = true;
     legitimacyChecksDiv.innerHTML = `<span>${nonDet ? '✅' : '❌'} non‑determinacy</span> <span>${expl ? '✅' : '❌'} explainability</span> <span>${rev ? '✅' : '❌'} reversibility</span>`;
-
     const myConsent = currentParty === 'A' ? data.partyA?.consented : data.partyB?.consented;
     const bothConsented = data.partyA?.consented && data.partyB?.consented;
-
     if (!myConsent) {
       consentCard.classList.remove('hidden');
-      intakeCard.classList.add('hidden');
-      classificationCard.classList.add('hidden');
-      shareCard.classList.add('hidden');
-      negotiationCard.classList.add('hidden');
+      intakeCard.classList.add('hidden'); classificationCard.classList.add('hidden'); shareCard.classList.add('hidden'); negotiationCard.classList.add('hidden');
       messageInput.disabled = true; sendButton.disabled = true;
     } else if (!data.disputeText) {
       consentCard.classList.add('hidden');
       intakeCard.classList.remove('hidden');
-      classificationCard.classList.add('hidden');
-      shareCard.classList.add('hidden');
-      negotiationCard.classList.add('hidden');
+      classificationCard.classList.add('hidden'); shareCard.classList.add('hidden'); negotiationCard.classList.add('hidden');
       messageInput.disabled = true; sendButton.disabled = true;
     } else if (data.classification && !bothConsented) {
       classificationCard.classList.remove('hidden');
       shareCard.classList.remove('hidden');
-      intakeCard.classList.add('hidden');
-      consentCard.classList.add('hidden');
-      negotiationCard.classList.add('hidden');
+      intakeCard.classList.add('hidden'); consentCard.classList.add('hidden'); negotiationCard.classList.add('hidden');
       const c = data.classification;
       classificationDisplay.innerHTML = `<p><strong>Domain:</strong> ${c.domain}<br><strong>Issues:</strong> ${c.issues.join(', ')}<br><strong>Pathway:</strong> ${c.recommendedPathway}<br><strong>Confidence:</strong> ${c.confidence}%<br><em>${c.explanation}</em></p>`;
       const inviteUrl = `${window.location.origin}${window.location.pathname}?dispute=${currentDisputeId}&party=${currentParty === 'A' ? 'B' : 'A'}`;
       shareLinkDiv.textContent = inviteUrl;
       messageInput.disabled = true; sendButton.disabled = true;
     } else if (bothConsented) {
-      consentCard.classList.add('hidden');
-      intakeCard.classList.add('hidden');
-      classificationCard.classList.add('hidden');
-      shareCard.classList.add('hidden');
-      negotiationCard.classList.remove('hidden');
+      consentCard.classList.add('hidden'); intakeCard.classList.add('hidden'); classificationCard.classList.add('hidden'); shareCard.classList.add('hidden'); negotiationCard.classList.remove('hidden');
       messageInput.disabled = false; sendButton.disabled = false;
-
       if (data.options && data.options.length) {
         const optsHtml = data.options.map((opt, idx) => `<li class="${data.selectedOption === idx ? 'selected' : ''}" data-opt-index="${idx}"><div><strong>${opt.description}</strong>${opt.stake ? ` ($${opt.stake})` : ''}<div style="font-size:0.75rem;">ⓘ ${opt.justification}</div></div></li>`).join('');
         optionsContainer.innerHTML = `<ul class="options-list">${optsHtml}</ul>`;
@@ -303,57 +314,41 @@
     }
   }
 
-  async function selectOption(idx) {
-    await updateDoc(currentDisputeRef, { selectedOption: idx });
-  }
+  async function selectOption(idx) { await updateDoc(currentDisputeRef, { selectedOption: idx }); }
 
-  // ----- Groq calls with fallback -----
-  async function callGroq(prompt, systemMsg = 'You are a neutral dispute resolution assistant.', temp = 0.3, json = false) {
+  // ----- AI mock/fallback helpers -----
+  async function callGroq(prompt, systemMsg = 'You are a neutral assistant.', temp = 0.3, json = false) {
     const messages = [{ role: 'system', content: systemMsg }, { role: 'user', content: prompt }];
     const body = { model: GROQ_MODEL, messages, temperature: temp, max_tokens: 800 };
     if (json) body.response_format = { type: 'json_object' };
     try {
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        method: 'POST', headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body)
       });
       const data = await resp.json();
       return data.choices[0].message.content;
-    } catch (e) {
-      console.warn("Groq failed", e);
-      return null;
-    }
+    } catch (e) { return null; }
   }
-
   async function classifyDispute(text) {
-    const prompt = `Classify this dispute: "${text}". Return JSON with fields: domain, issues (array), recommendedPathway, confidence (0-100), explanation.`;
+    const prompt = `Classify dispute: "${text}". Return JSON: { domain, issues (array), recommendedPathway, confidence, explanation }`;
     const res = await callGroq(prompt, 'You are a dispute classifier. Output JSON.', 0.1, true);
-    if (res) {
-      try { return JSON.parse(res); } catch(e) { console.warn("JSON parse error"); }
-    }
+    if (res) try { return JSON.parse(res); } catch(e) {}
     return { domain: "general", issues: ["unknown"], recommendedPathway: "negotiation", confidence: 70, explanation: "Fallback classification." };
   }
   async function generateTitle(text) {
-    const res = await callGroq(`Short title (max 6 words): "${text}"`, 'Output only the title.', 0.3);
+    const res = await callGroq(`Short title (max 6 words): "${text}"`, 'Output only title.', 0.3);
     return res ? res.trim() : text.slice(0,40);
   }
   async function generateOptions(disputeText, statements) {
     const prompt = `Suggest 3 fair settlement options for: "${disputeText}" (statements: ${JSON.stringify(statements)}). Return JSON: { options: [{ description, stake, justification }] }`;
     const res = await callGroq(prompt, 'You are a neutral mediator. Output JSON.', 0.4, true);
-    if (res) {
-      try {
-        let opts = JSON.parse(res).options;
-        if (opts && opts.length) {
-          // randomize order (non-determinacy)
-          for (let i = opts.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [opts[i], opts[j]] = [opts[j], opts[i]];
-          }
-          return opts;
-        }
-      } catch(e) {}
-    }
+    if (res) try {
+      let opts = JSON.parse(res).options;
+      if (opts && opts.length) {
+        for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [opts[i], opts[j]] = [opts[j], opts[i]]; }
+        return opts;
+      }
+    } catch(e) {}
     return [
       { description: "Full refund", stake: 100, justification: "Common in similar disputes." },
       { description: "Partial refund (50%)", stake: 50, justification: "Fair compromise." },
@@ -369,9 +364,9 @@
     return res || "• Both parties agree there was a transaction.\n• Disagreement on key details.\n• Both open to a compromise.";
   }
   async function botReply(userMessage, history) {
-    const prompt = `You are an impartial AI mediator. Facilitate communication, ask questions, never give legal advice. Remind suggestions are non-binding. User: "${userMessage}". Context: ${JSON.stringify(history)}. Reply concisely.`;
+    const prompt = `You are an impartial AI mediator. Facilitate, ask questions, never give legal advice. Remind suggestions are non-binding. User: "${userMessage}". Context: ${JSON.stringify(history)}. Reply concisely.`;
     const res = await callGroq(prompt, '', 0.7);
-    return res || "Thank you for sharing that. Remember, any suggestions I make are non-binding. What would feel fair to you?";
+    return res || "Thank you for sharing. Remember, any suggestions I make are non-binding. What would feel fair?";
   }
 
   // ----- Event handlers -----
@@ -382,14 +377,7 @@
       status: 'intake',
       partyA: { sessionId, consented: false, storageConsent: false, trainingConsent: false },
       partyB: { sessionId: null, consented: false },
-      disputeText: '',
-      classification: null,
-      statements: [],
-      options: [],
-      selectedOption: null,
-      settlementText: '',
-      attachments: [],
-      humanEscalation: false
+      disputeText: '', classification: null, statements: [], options: [], selectedOption: null, settlementText: '', attachments: [], humanEscalation: false
     };
     await setDoc(doc(db, 'disputes', id), disputeData);
     loadDispute(id, 'A');
@@ -404,9 +392,7 @@
       : { 'partyB.consented': true, 'partyB.sessionId': sessionId };
     await updateDoc(currentDisputeRef, updates);
   });
-
   document.getElementById('declineBtn').addEventListener('click', () => alert('Consent required to proceed.'));
-
   classifyBtn.addEventListener('click', async () => {
     const text = disputeInput.value.trim();
     if (!text) return;
@@ -414,17 +400,14 @@
     const title = await generateTitle(text);
     await updateDoc(currentDisputeRef, { disputeText: text, classification, title });
   });
-
-  proceedBtn.addEventListener('click', () => {}); // UI updates automatically
+  proceedBtn.addEventListener('click', () => {});
   copyLinkBtn.addEventListener('click', () => { navigator.clipboard.writeText(shareLinkDiv.textContent); alert('Link copied'); });
-
   getOptionsBtn.addEventListener('click', async () => {
     const snap = await getDoc(currentDisputeRef);
     const data = snap.data();
     const opts = await generateOptions(data.disputeText, data.statements || []);
     await updateDoc(currentDisputeRef, { options: opts, selectedOption: null });
   });
-
   generateAgreementBtn.addEventListener('click', async () => {
     const snap = await getDoc(currentDisputeRef);
     const data = snap.data();
@@ -432,27 +415,23 @@
     const agreement = await generateAgreement(data.disputeText, data.options[data.selectedOption].description);
     await updateDoc(currentDisputeRef, { settlementText: agreement });
   });
-
   withdrawConsentBtn.addEventListener('click', async () => {
     if (confirm('Withdraw consent? You will no longer see dispute details until you re-consent.')) {
       const updates = currentParty === 'A' ? { 'partyA.consented': false } : { 'partyB.consented': false };
       await updateDoc(currentDisputeRef, updates);
     }
   });
-
   deleteDataBtn.addEventListener('click', async () => {
     if (confirm('Delete all data for this dispute? Cannot be undone.')) {
       await updateDoc(currentDisputeRef, { deleted: true, disputeText: deleteField(), statements: deleteField(), options: deleteField(), settlementText: deleteField() });
       window.location.href = window.location.pathname;
     }
   });
-
   humanEscalateBtn.addEventListener('click', async () => {
     await updateDoc(currentDisputeRef, { humanEscalation: true });
     addMessageToChat('system', 'Human mediator has been requested.');
     await addMessageToFirestore('system', 'A party requested human mediator intervention.', false);
   });
-
   guidedNegotiationBtn.addEventListener('click', async () => {
     const snap = await getDoc(currentDisputeRef);
     const data = snap.data();
@@ -471,22 +450,18 @@
     addMessageToChat('user', text);
     await addMessageToFirestore('user', text);
     messageInput.value = '';
-    // Update statements
     const snap = await getDoc(currentDisputeRef);
     const statements = snap.data().statements || [];
     statements.push({ party: currentParty, text, timestamp: new Date().toISOString() });
     await updateDoc(currentDisputeRef, { statements });
-    // Get conversation history for bot context
     const msgsSnap = await getDocs(query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20)));
     const history = msgsSnap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
     const reply = await botReply(text, history);
     addMessageToChat('bot', reply);
     await addMessageToFirestore('bot', reply, false);
   }
-
   sendButton.addEventListener('click', sendMessage);
   messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-
   attachButton.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', async (e) => {
     if (!currentDisputeRef) return;
@@ -503,7 +478,32 @@
     fileInput.value = '';
   });
 
-  // Initial load
+  fallbackModeBtn.addEventListener('click', () => {
+    firebaseAvailable = false;
+    document.getElementById('firebaseStatus').innerHTML = '⚠️ Offline mode (localStorage)';
+    document.getElementById('firebaseStatus').className = 'status-badge error';
+    // re-init localStorage fallback
+    window.localStorageDB = { disputes: {}, messages: {} };
+    db = {
+      doc: (path) => ({ id: path.split('/').pop() }),
+      setDoc: async (ref, data) => { window.localStorageDB.disputes[ref.id] = data; return true; },
+      getDoc: async (ref) => ({ exists: () => !!window.localStorageDB.disputes[ref.id], data: () => window.localStorageDB.disputes[ref.id] }),
+      updateDoc: async (ref, updates) => { if (window.localStorageDB.disputes[ref.id]) Object.assign(window.localStorageDB.disputes[ref.id], updates); return true; },
+      onSnapshot: (ref, cb) => { cb({ exists: () => !!window.localStorageDB.disputes[ref.id], data: () => window.localStorageDB.disputes[ref.id] }); return () => {}; },
+      collection: () => ({}),
+      addDoc: async (colRef, data) => { const id = crypto.randomUUID(); const path = colRef.path || 'messages'; if (!window.localStorageDB.messages[path]) window.localStorageDB.messages[path] = []; window.localStorageDB.messages[path].push({ id, ...data }); return { id }; },
+      getDocs: async (q) => {
+        const path = q._firestoreClient?.databaseId?.projectId ? 'unknown' : '';
+        const msgs = window.localStorageDB.messages[path] || [];
+        return { docs: msgs.map(m => ({ data: () => m })) };
+      },
+      query: () => ({}), where: () => ({}), orderBy: () => ({}), limit: () => ({}),
+      serverTimestamp: () => new Date().toISOString(),
+      deleteField: () => null
+    };
+    alert("Switched to offline mode. Refresh or create a new dispute to use localStorage.");
+  });
+
   window.addEventListener('load', async () => {
     const params = new URLSearchParams(window.location.search);
     const disputeId = params.get('dispute');
