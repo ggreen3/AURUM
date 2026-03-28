@@ -140,7 +140,7 @@
     firebaseAvailable = true;
     document.getElementById('firebaseStatus').innerHTML = '✅ Firebase connected';
     document.getElementById('firebaseStatus').className = 'status-badge success';
-    // Quick test: try to write a test doc to check permissions
+    // test write
     const testRef = doc(db, 'test', 'test');
     setDoc(testRef, { test: true }).catch(err => {
       console.warn("Firestore permission test failed:", err);
@@ -213,8 +213,9 @@
 
   let currentDisputeId = null, currentDisputeRef = null, currentParty = null;
   let unsubscribeDispute = null, unsubscribeMessages = null;
+  let disputeContextDisplayed = false; // to avoid repeating the context
 
-  // Helper functions (add message)
+  // Helper functions
   function addMessageToChat(sender, text, isAttachment = false) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${sender}`;
@@ -228,7 +229,7 @@
       await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
         sender, text, timestamp: serverTimestamp(), party: currentParty, type: isAttachment ? 'attachment' : 'text'
       });
-    } catch (e) { console.warn("Message write failed", e); alert("Failed to send message: " + e.message); }
+    } catch (e) { console.warn("Message write failed", e); }
   }
 
   // Load dispute list
@@ -246,7 +247,6 @@
       renderDisputeList(disputes);
     } catch (e) {
       console.error("loadDisputeList error", e);
-      alert("Error loading disputes: " + e.message);
     }
   }
 
@@ -273,13 +273,14 @@
     currentParty = party;
     currentDisputeRef = doc(db, 'disputes', disputeId);
     partyBadge.textContent = `Party ${party}`;
+    disputeContextDisplayed = false; // reset for this dispute
     const url = new URL(window.location);
     url.searchParams.set('dispute', disputeId);
     url.searchParams.set('party', party);
     window.history.pushState({}, '', url);
     unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
       if (snap.exists()) updateUIFromDispute(snap.data());
-    }, (err) => { console.error("Snapshot error", err); alert("Error listening to dispute: " + err.message); });
+    }, (err) => { console.error("Snapshot error", err); });
     const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(100));
     unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
       chatMessagesDiv.innerHTML = '';
@@ -318,6 +319,18 @@
     } else if (bothConsented) {
       consentCard.classList.add('hidden'); intakeCard.classList.add('hidden'); classificationCard.classList.add('hidden'); shareCard.classList.add('hidden'); negotiationCard.classList.remove('hidden');
       messageInput.disabled = false; sendButton.disabled = false;
+      // Show dispute context if not already displayed
+      if (!disputeContextDisplayed && data.disputeText) {
+        disputeContextDisplayed = true;
+        let contextMsg = `📋 **Dispute**: ${data.disputeText}`;
+        if (data.classification) {
+          contextMsg += `\n\n**Domain**: ${data.classification.domain}\n**Issues**: ${data.classification.issues.join(', ')}\n**Suggested pathway**: ${data.classification.recommendedPathway}`;
+        }
+        addMessageToChat('system', contextMsg);
+        // Also store this system message in Firestore so both parties see it
+        addMessageToFirestore('system', contextMsg, false);
+      }
+      // Display options if present
       if (data.options && data.options.length) {
         const optsHtml = data.options.map((opt, idx) => `<li class="${data.selectedOption === idx ? 'selected' : ''}" data-opt-index="${idx}"><div><strong>${opt.description}</strong>${opt.stake ? ` ($${opt.stake})` : ''}<div style="font-size:0.75rem;">ⓘ ${opt.justification}</div></div></li>`).join('');
         optionsContainer.innerHTML = `<ul class="options-list">${optsHtml}</ul>`;
@@ -330,10 +343,10 @@
   async function selectOption(idx) {
     try {
       await updateDoc(currentDisputeRef, { selectedOption: idx });
-    } catch (e) { alert("Failed to select option: " + e.message); }
+    } catch (e) { console.error("Failed to select option", e); }
   }
 
-  // ----- AI mock/fallback helpers (unchanged) -----
+  // ----- AI helpers with better fallback -----
   async function callGroq(prompt, systemMsg = 'You are a neutral assistant.', temp = 0.3, json = false) {
     const messages = [{ role: 'system', content: systemMsg }, { role: 'user', content: prompt }];
     const body = { model: GROQ_MODEL, messages, temperature: temp, max_tokens: 800 };
@@ -344,8 +357,12 @@
       });
       const data = await resp.json();
       return data.choices[0].message.content;
-    } catch (e) { return null; }
+    } catch (e) {
+      console.warn("Groq API call failed:", e);
+      return null;
+    }
   }
+
   async function classifyDispute(text) {
     const prompt = `Classify dispute: "${text}". Return JSON: { domain, issues (array), recommendedPathway, confidence, explanation }`;
     const res = await callGroq(prompt, 'You are a dispute classifier. Output JSON.', 0.1, true);
@@ -380,13 +397,16 @@
     const res = await callGroq(`Summarize agreements/disagreements from: ${JSON.stringify(statements)}. Return bullet list.`);
     return res || "• Both parties agree there was a transaction.\n• Disagreement on key details.\n• Both open to a compromise.";
   }
-  async function botReply(userMessage, history) {
-    const prompt = `You are an impartial AI mediator. Facilitate, ask questions, never give legal advice. Remind suggestions are non-binding. User: "${userMessage}". Context: ${JSON.stringify(history)}. Reply concisely.`;
+  async function botReply(userMessage, history, disputeText, classification) {
+    const contextInfo = `Dispute: ${disputeText}\nClassification: ${classification?.domain || 'general'}\nIssues: ${classification?.issues?.join(', ') || 'not specified'}`;
+    const prompt = `You are an impartial AI mediator. Facilitate communication, ask questions, never give legal advice. Remind that all suggestions are non-binding. The dispute is about: ${contextInfo}. User said: "${userMessage}". Previous conversation: ${JSON.stringify(history.slice(-5))}. Reply concisely and helpfully.`;
     const res = await callGroq(prompt, '', 0.7);
-    return res || "Thank you for sharing. Remember, any suggestions I make are non-binding. What would feel fair?";
+    if (res) return res;
+    // Fallback: provide a helpful reply based on dispute context
+    return `Thanks for your message. Based on the dispute (${disputeText.slice(0,80)}...), let's explore what would be fair. Remember, any suggestions I make are non-binding. Could you tell me more about your perspective?`;
   }
 
-  // ----- Event handlers with error handling -----
+  // ----- Event handlers (with error alerts) -----
   newDisputeBtn.addEventListener('click', async () => {
     const id = crypto.randomUUID();
     const disputeData = {
@@ -400,7 +420,6 @@
       await setDoc(doc(db, 'disputes', id), disputeData);
       loadDispute(id, 'A');
     } catch (e) {
-      console.error("New dispute error:", e);
       alert("Failed to create dispute: " + e.message + "\n\nCheck Firebase rules (should allow read/write).");
     }
   });
@@ -490,12 +509,13 @@
     messageInput.value = '';
     try {
       const snap = await getDoc(currentDisputeRef);
-      const statements = snap.data().statements || [];
+      const data = snap.data();
+      const statements = data.statements || [];
       statements.push({ party: currentParty, text, timestamp: new Date().toISOString() });
       await updateDoc(currentDisputeRef, { statements });
       const msgsSnap = await getDocs(query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20)));
       const history = msgsSnap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
-      const reply = await botReply(text, history);
+      const reply = await botReply(text, history, data.disputeText, data.classification);
       addMessageToChat('bot', reply);
       await addMessageToFirestore('bot', reply, false);
     } catch (e) { console.warn("Error in sendMessage", e); alert("Failed to process message: " + e.message); }
@@ -524,7 +544,6 @@
     firebaseAvailable = false;
     document.getElementById('firebaseStatus').innerHTML = '⚠️ Offline mode (localStorage)';
     document.getElementById('firebaseStatus').className = 'status-badge error';
-    // re-init localStorage fallback
     window.localStorageDB = { disputes: {}, messages: {} };
     db = {
       doc: (path) => ({ id: path.split('/').pop() }),
