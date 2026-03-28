@@ -45,7 +45,6 @@
     .legitimacy-check { display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.8rem; }
     .hidden { display: none; }
     .share-link { background: var(--surface-secondary); padding: 0.5rem; font-family: monospace; font-size: 0.8rem; word-break: break-all; border-radius: var(--radius-sm); }
-    .error-message { color: var(--danger); background: #fee2e2; padding: 0.5rem; border-radius: var(--radius-sm); margin-top: 0.5rem; font-size: 0.8rem; }
   </style>
 </head>
 <body>
@@ -213,9 +212,8 @@
 
   let currentDisputeId = null, currentDisputeRef = null, currentParty = null;
   let unsubscribeDispute = null, unsubscribeMessages = null;
-  let disputeContextDisplayed = false; // to avoid repeating the context
+  let disputeContextDisplayed = false;
 
-  // Helper functions
   function addMessageToChat(sender, text, isAttachment = false) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${sender}`;
@@ -232,7 +230,6 @@
     } catch (e) { console.warn("Message write failed", e); }
   }
 
-  // Load dispute list
   async function loadDisputeList() {
     if (!firebaseAvailable) {
       const disputes = Object.values(window.localStorageDB.disputes).filter(d => d.partyA?.sessionId === sessionId || d.partyB?.sessionId === sessionId);
@@ -245,9 +242,7 @@
       const [snapA, snapB] = await Promise.all([getDocs(q1), getDocs(q2)]);
       const disputes = [...snapA.docs, ...snapB.docs].map(d => ({ id: d.id, ...d.data() }));
       renderDisputeList(disputes);
-    } catch (e) {
-      console.error("loadDisputeList error", e);
-    }
+    } catch (e) { console.error("loadDisputeList error", e); }
   }
 
   function renderDisputeList(disputes) {
@@ -273,20 +268,20 @@
     currentParty = party;
     currentDisputeRef = doc(db, 'disputes', disputeId);
     partyBadge.textContent = `Party ${party}`;
-    disputeContextDisplayed = false; // reset for this dispute
+    disputeContextDisplayed = false;
     const url = new URL(window.location);
     url.searchParams.set('dispute', disputeId);
     url.searchParams.set('party', party);
     window.history.pushState({}, '', url);
     unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
       if (snap.exists()) updateUIFromDispute(snap.data());
-    }, (err) => { console.error("Snapshot error", err); });
+    }, (err) => console.error("Snapshot error", err));
     const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(100));
     unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
       chatMessagesDiv.innerHTML = '';
       snap.forEach(d => addMessageToChat(d.data().sender, d.data().text, d.data().type === 'attachment'));
       if (chatMessagesDiv.children.length === 0) addMessageToChat('system', 'Negotiation channel ready.');
-    }, (err) => { console.error("Messages snapshot error", err); });
+    });
     loadDisputeList();
   }
 
@@ -319,7 +314,6 @@
     } else if (bothConsented) {
       consentCard.classList.add('hidden'); intakeCard.classList.add('hidden'); classificationCard.classList.add('hidden'); shareCard.classList.add('hidden'); negotiationCard.classList.remove('hidden');
       messageInput.disabled = false; sendButton.disabled = false;
-      // Show dispute context if not already displayed
       if (!disputeContextDisplayed && data.disputeText) {
         disputeContextDisplayed = true;
         let contextMsg = `📋 **Dispute**: ${data.disputeText}`;
@@ -327,10 +321,8 @@
           contextMsg += `\n\n**Domain**: ${data.classification.domain}\n**Issues**: ${data.classification.issues.join(', ')}\n**Suggested pathway**: ${data.classification.recommendedPathway}`;
         }
         addMessageToChat('system', contextMsg);
-        // Also store this system message in Firestore so both parties see it
         addMessageToFirestore('system', contextMsg, false);
       }
-      // Display options if present
       if (data.options && data.options.length) {
         const optsHtml = data.options.map((opt, idx) => `<li class="${data.selectedOption === idx ? 'selected' : ''}" data-opt-index="${idx}"><div><strong>${opt.description}</strong>${opt.stake ? ` ($${opt.stake})` : ''}<div style="font-size:0.75rem;">ⓘ ${opt.justification}</div></div></li>`).join('');
         optionsContainer.innerHTML = `<ul class="options-list">${optsHtml}</ul>`;
@@ -341,12 +333,10 @@
   }
 
   async function selectOption(idx) {
-    try {
-      await updateDoc(currentDisputeRef, { selectedOption: idx });
-    } catch (e) { console.error("Failed to select option", e); }
+    try { await updateDoc(currentDisputeRef, { selectedOption: idx }); } catch (e) { console.error("Failed to select option", e); }
   }
 
-  // ----- AI helpers with better fallback -----
+  // ----- AI helpers with intelligent fallback -----
   async function callGroq(prompt, systemMsg = 'You are a neutral assistant.', temp = 0.3, json = false) {
     const messages = [{ role: 'system', content: systemMsg }, { role: 'user', content: prompt }];
     const body = { model: GROQ_MODEL, messages, temperature: temp, max_tokens: 800 };
@@ -397,16 +387,44 @@
     const res = await callGroq(`Summarize agreements/disagreements from: ${JSON.stringify(statements)}. Return bullet list.`);
     return res || "• Both parties agree there was a transaction.\n• Disagreement on key details.\n• Both open to a compromise.";
   }
+
+  // --- IMPROVED BOT REPLY (intelligent fallback) ---
   async function botReply(userMessage, history, disputeText, classification) {
-    const contextInfo = `Dispute: ${disputeText}\nClassification: ${classification?.domain || 'general'}\nIssues: ${classification?.issues?.join(', ') || 'not specified'}`;
-    const prompt = `You are an impartial AI mediator. Facilitate communication, ask questions, never give legal advice. Remind that all suggestions are non-binding. The dispute is about: ${contextInfo}. User said: "${userMessage}". Previous conversation: ${JSON.stringify(history.slice(-5))}. Reply concisely and helpfully.`;
-    const res = await callGroq(prompt, '', 0.7);
-    if (res) return res;
-    // Fallback: provide a helpful reply based on dispute context
-    return `Thanks for your message. Based on the dispute (${disputeText.slice(0,80)}...), let's explore what would be fair. Remember, any suggestions I make are non-binding. Could you tell me more about your perspective?`;
+    const domain = classification?.domain || 'general';
+    const issues = classification?.issues?.join(', ') || 'unknown';
+    const context = `Dispute: ${disputeText}\nDomain: ${domain}\nIssues: ${issues}`;
+    
+    const prompt = `You are an impartial AI mediator. Facilitate communication, ask questions, never give legal advice. Remind that all suggestions are non-binding. The dispute is: ${context}. User said: "${userMessage}". Previous conversation: ${JSON.stringify(history.slice(-5))}. Reply concisely and helpfully.`;
+    const groqReply = await callGroq(prompt, '', 0.7);
+    if (groqReply) return groqReply;
+    
+    // ----- Intelligent fallback (no API) -----
+    console.warn("Groq API failed, using intelligent fallback.");
+    const lowerMsg = userMessage.toLowerCase();
+    
+    if (lowerMsg.includes('refund') || lowerMsg.includes('overcharged') || lowerMsg.includes('price')) {
+      return `I hear you’re concerned about the price/refund. Given the dispute (${disputeText.slice(0,60)}...), a common solution is to discuss a partial or full refund. Would you like me to generate some settlement options? (Click "generate options")`;
+    }
+    if (lowerMsg.includes('agree') || lowerMsg.includes('accept') || lowerMsg.includes('deal')) {
+      return `It sounds like you're reaching an agreement. If you have a specific offer in mind, you can use the "create settlement" button to draft a non-binding agreement.`;
+    }
+    if (lowerMsg.includes('what') || lowerMsg.includes('how')) {
+      return `Let’s clarify. The dispute is about: ${disputeText.slice(0,80)}... Could you tell me what outcome you’re hoping for?`;
+    }
+    if (lowerMsg.includes('sorry') || lowerMsg.includes('apologize')) {
+      return `Acknowledging the situation is a good step. Would you like to explore a fair compromise? You can click "generate options" to see common solutions.`;
+    }
+    if (lowerMsg.includes('lawyer') || lowerMsg.includes('court') || lowerMsg.includes('legal')) {
+      return `I’m not a lawyer and cannot give legal advice. If you need legal guidance, please consult a qualified professional. In the meantime, we can try to resolve this amicably through negotiation.`;
+    }
+    if (lowerMsg.includes('time') || lowerMsg.includes('delay')) {
+      return `Timing can be important. Would you be open to a deadline for a response? Many disputes are resolved faster with a clear timeline.`;
+    }
+    // Default fallback – still contextual
+    return `Thanks for your message. Based on the dispute (${disputeText.slice(0,80)}...), let's explore what would be fair. Remember, any suggestions I make are non-binding. Could you tell me more about your perspective? You can also use the "generate options" button to see potential solutions.`;
   }
 
-  // ----- Event handlers (with error alerts) -----
+  // ----- Event handlers (unchanged from earlier working version) -----
   newDisputeBtn.addEventListener('click', async () => {
     const id = crypto.randomUUID();
     const disputeData = {
@@ -419,9 +437,7 @@
     try {
       await setDoc(doc(db, 'disputes', id), disputeData);
       loadDispute(id, 'A');
-    } catch (e) {
-      alert("Failed to create dispute: " + e.message + "\n\nCheck Firebase rules (should allow read/write).");
-    }
+    } catch (e) { alert("Failed to create dispute: " + e.message); }
   });
 
   document.getElementById('consentBtn').addEventListener('click', async () => {
@@ -441,9 +457,7 @@
     if (!text) return;
     const classification = await classifyDispute(text);
     const title = await generateTitle(text);
-    try {
-      await updateDoc(currentDisputeRef, { disputeText: text, classification, title });
-    } catch (e) { alert("Failed to classify: " + e.message); }
+    try { await updateDoc(currentDisputeRef, { disputeText: text, classification, title }); } catch (e) { alert("Failed to classify: " + e.message); }
   });
   proceedBtn.addEventListener('click', () => {});
   copyLinkBtn.addEventListener('click', () => { navigator.clipboard.writeText(shareLinkDiv.textContent); alert('Link copied'); });
