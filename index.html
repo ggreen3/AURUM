@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AURUM · Algorithmic Mediation (Firebase)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>AURUM · Algorithmic ADR Prototype</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -13,7 +13,7 @@
       --warning: #f59e0b; --danger: #ef4444;
       --radius-md: 20px; --radius-sm: 12px;
     }
-    body { background: var(--bg); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; line-height: 1.5; padding: 1rem; }
+    body { background: var(--bg); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; padding: 1rem; }
     .app { max-width: 1400px; margin: 0 auto; }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
     .logo-text { font-size: 1.6rem; font-weight: 350; font-family: 'Times New Roman', serif; }
@@ -47,7 +47,7 @@
 </head>
 <body>
 <div class="app">
-  <header><div class="logo-text">⚖️ AURUM · algorithmic mediation</div><small>non‑determinacy · explainability · reversibility</small></header>
+  <header><div class="logo-text">⚖️ AURUM · algorithmic ADR prototype</div><small>non‑determinacy · explainability · reversibility</small></header>
   <div class="main-grid">
     <!-- Left sidebar: dispute list -->
     <div class="left-sidebar">
@@ -108,7 +108,7 @@
       <div class="card"><h3>👥 parties</h3><div>Party A: <span id="partyAStatus">—</span> &nbsp; Party B: <span id="partyBStatus">—</span></div><div id="escalationStatus" style="font-size:0.8rem;"></div></div>
     </div>
   </div>
-  <footer style="margin-top: 2rem; text-align: center; color: var(--text-muted);">AURUM · algorithmic mediation prototype (Firebase + Groq)</footer>
+  <footer style="margin-top: 2rem; text-align: center; color: var(--text-muted);">AURUM · algorithmic ADR prototype</footer>
 </div>
 
 <script type="importmap">
@@ -124,7 +124,6 @@
   import { initializeApp } from 'firebase/app';
   import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, deleteField } from 'firebase/firestore';
 
-  // ---------- CONFIGURATION ----------
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyDu-dywLoaxALdebvZdjfxA83nHBuvFBGE",
     authDomain: "aurum-dispute-resolution.firebaseapp.com",
@@ -137,52 +136,20 @@
   const GROQ_API_KEY = "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";
   const GROQ_MODEL = "llama-3.3-70b-versatile";
 
-  // Initialize Firebase with error handling
   let db;
-  let firebaseAvailable = false;
   try {
     const app = initializeApp(FIREBASE_CONFIG);
     db = getFirestore(app);
-    firebaseAvailable = true;
-    console.log("Firebase initialized");
+    console.log("Firebase ready");
   } catch (e) {
-    console.warn("Firebase init failed, using localStorage fallback", e);
-    firebaseAvailable = false;
+    alert("Firebase init failed – check console");
+    throw e;
   }
 
-  // Fallback localStorage mock for Firestore functions (simplified)
-  if (!firebaseAvailable) {
-    window.localStorageDB = { disputes: {}, messages: {} };
-    db = {
-      doc: (path) => ({ id: path.split('/').pop(), path }),
-      setDoc: async (ref, data) => { window.localStorageDB.disputes[ref.id] = data; return true; },
-      getDoc: async (ref) => ({ exists: () => !!window.localStorageDB.disputes[ref.id], data: () => window.localStorageDB.disputes[ref.id] }),
-      updateDoc: async (ref, updates) => { if (window.localStorageDB.disputes[ref.id]) Object.assign(window.localStorageDB.disputes[ref.id], updates); return true; },
-      onSnapshot: (ref, cb) => { cb({ exists: () => !!window.localStorageDB.disputes[ref.id], data: () => window.localStorageDB.disputes[ref.id] }); return () => {}; },
-      collection: () => ({}),
-      addDoc: async (colRef, data) => { const id = crypto.randomUUID(); if (!window.localStorageDB.messages[colRef.path]) window.localStorageDB.messages[colRef.path] = []; window.localStorageDB.messages[colRef.path].push({ id, ...data }); return { id }; },
-      getDocs: async (q) => {
-        const path = q._firestoreClient?.databaseId?.projectId ? 'unknown' : ''; // mock
-        const msgs = window.localStorageDB.messages[path] || [];
-        return { docs: msgs.map(m => ({ data: () => m })) };
-      },
-      query: () => ({}),
-      where: () => ({}),
-      orderBy: () => ({}),
-      limit: () => ({}),
-      serverTimestamp: () => new Date().toISOString(),
-      deleteField: () => null
-    };
-    console.log("Using localStorage fallback");
-  }
+  const sessionId = localStorage.getItem('sessionId') || crypto.randomUUID();
+  localStorage.setItem('sessionId', sessionId);
 
-  // Helper to get serverTimestamp
-  const getServerTimestamp = () => firebaseAvailable ? serverTimestamp() : new Date().toISOString();
-
-  // Session ID
-  const sessionId = localStorage.getItem('sessionId') || (() => { const s = crypto.randomUUID(); localStorage.setItem('sessionId', s); return s; })();
-
-  // ---------- UI Elements ----------
+  // DOM elements
   const disputeListDiv = document.getElementById('disputeList');
   const newDisputeBtn = document.getElementById('newDisputeBtn');
   const chatMessagesDiv = document.getElementById('chatMessages');
@@ -215,52 +182,30 @@
   const guidedNegotiationBtn = document.getElementById('guidedNegotiationBtn');
   const legitimacyChecksDiv = document.getElementById('legitimacyChecks');
 
-  let currentDisputeId = null;
-  let currentDisputeRef = null;
-  let currentParty = null; // 'A' or 'B'
-  let unsubscribeDispute = null;
-  let unsubscribeMessages = null;
+  let currentDisputeId = null, currentDisputeRef = null, currentParty = null;
+  let unsubscribeDispute = null, unsubscribeMessages = null;
 
-  // ---------- Helper: add message to chat ----------
+  // Helper: add message to UI and Firestore
   function addMessageToChat(sender, text, isAttachment = false) {
     const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${sender}${isAttachment ? ' attachment' : ''}`;
+    msgDiv.className = `message ${sender}`;
     msgDiv.textContent = text;
     chatMessagesDiv.appendChild(msgDiv);
     chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
   }
-
   async function addMessageToFirestore(sender, text, isAttachment = false) {
     if (!currentDisputeRef) return;
-    try {
-      await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
-        sender,
-        text,
-        timestamp: getServerTimestamp(),
-        party: currentParty,
-        type: isAttachment ? 'attachment' : 'text'
-      });
-    } catch (e) {
-      console.warn("Failed to add message to Firestore", e);
-    }
+    await addDoc(collection(db, 'disputes', currentDisputeId, 'messages'), {
+      sender, text, timestamp: serverTimestamp(), party: currentParty, type: isAttachment ? 'attachment' : 'text'
+    });
   }
 
-  // ---------- Load dispute list ----------
+  // Load list of disputes for this session
   async function loadDisputeList() {
-    if (!firebaseAvailable) {
-      // Fallback: read from localStorageDB
-      const disputes = Object.values(window.localStorageDB.disputes).filter(d => d.partyA?.sessionId === sessionId || d.partyB?.sessionId === sessionId);
-      renderDisputeList(disputes);
-      return;
-    }
     const q1 = query(collection(db, 'disputes'), where('partyA.sessionId', '==', sessionId));
     const q2 = query(collection(db, 'disputes'), where('partyB.sessionId', '==', sessionId));
     const [snapA, snapB] = await Promise.all([getDocs(q1), getDocs(q2)]);
-    const disputes = [...snapA.docs, ...snapB.docs].map(doc => ({ id: doc.id, ...doc.data() }));
-    renderDisputeList(disputes);
-  }
-
-  function renderDisputeList(disputes) {
+    const disputes = [...snapA.docs, ...snapB.docs].map(d => ({ id: d.id, ...d.data() }));
     disputeListDiv.innerHTML = disputes.map(d => `
       <div class="dispute-list-item" style="background: var(--surface-secondary); margin-bottom: 0.5rem; padding: 0.5rem; border-radius: 12px; cursor: pointer;" data-id="${d.id}">
         <div><strong>${d.title || d.disputeText?.slice(0,30) || 'Dispute'}</strong></div>
@@ -271,64 +216,46 @@
       el.addEventListener('click', () => {
         const id = el.dataset.id;
         const dispute = disputes.find(d => d.id === id);
-        const party = dispute.partyA?.sessionId === sessionId ? 'A' : 'B';
-        loadDispute(id, party);
+        if (dispute) loadDispute(id, dispute.partyA?.sessionId === sessionId ? 'A' : 'B');
       });
     });
   }
 
-  // ---------- Load a specific dispute ----------
+  // Load a specific dispute
   async function loadDispute(disputeId, party) {
     if (unsubscribeDispute) unsubscribeDispute();
     if (unsubscribeMessages) unsubscribeMessages();
-
     currentDisputeId = disputeId;
     currentParty = party;
     currentDisputeRef = doc(db, 'disputes', disputeId);
     partyBadge.textContent = `Party ${party}`;
-
     // Update URL
     const url = new URL(window.location);
     url.searchParams.set('dispute', disputeId);
     url.searchParams.set('party', party);
     window.history.pushState({}, '', url);
-
-    if (firebaseAvailable) {
-      unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
-        if (snap.exists()) updateUIFromDispute(snap.data());
-      });
-      const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(100));
-      unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
-        chatMessagesDiv.innerHTML = '';
-        snap.forEach(doc => {
-          const msg = doc.data();
-          addMessageToChat(msg.sender, msg.text, msg.type === 'attachment');
-        });
-        if (chatMessagesDiv.children.length === 0) addMessageToChat('system', 'Negotiation channel ready.');
-      });
-    } else {
-      // Fallback: read once from localStorageDB
-      const snap = await getDoc(currentDisputeRef);
+    // Real-time dispute snapshot
+    unsubscribeDispute = onSnapshot(currentDisputeRef, (snap) => {
       if (snap.exists()) updateUIFromDispute(snap.data());
-      const msgs = window.localStorageDB.messages[`disputes/${disputeId}/messages`] || [];
+    });
+    // Messages snapshot
+    const messagesQuery = query(collection(db, 'disputes', disputeId, 'messages'), orderBy('timestamp', 'asc'), limit(100));
+    unsubscribeMessages = onSnapshot(messagesQuery, (snap) => {
       chatMessagesDiv.innerHTML = '';
-      msgs.forEach(m => addMessageToChat(m.sender, m.text, m.type === 'attachment'));
+      snap.forEach(d => addMessageToChat(d.data().sender, d.data().text, d.data().type === 'attachment'));
       if (chatMessagesDiv.children.length === 0) addMessageToChat('system', 'Negotiation channel ready.');
-    }
-
+    });
     loadDisputeList();
   }
 
-  // ---------- Update UI from dispute data ----------
   function updateUIFromDispute(data) {
     partyAStatus.textContent = data.partyA?.consented ? '✅ consented' : '⏳ pending';
     partyBStatus.textContent = data.partyB?.consented ? '✅ consented' : '⏳ pending';
     document.getElementById('escalationStatus').innerHTML = data.humanEscalation ? '🕊️ Human mediator requested' : '';
 
-    // Legitimacy checks
-    const nonDet = true; // always true in this system
+    const nonDet = true;
     const expl = data.classification?.explanation ? true : false;
-    const rev = true; // withdraw consent & delete data available
+    const rev = true;
     legitimacyChecksDiv.innerHTML = `<span>${nonDet ? '✅' : '❌'} non‑determinacy</span> <span>${expl ? '✅' : '❌'} explainability</span> <span>${rev ? '✅' : '❌'} reversibility</span>`;
 
     const myConsent = currentParty === 'A' ? data.partyA?.consented : data.partyB?.consented;
@@ -367,7 +294,6 @@
       negotiationCard.classList.remove('hidden');
       messageInput.disabled = false; sendButton.disabled = false;
 
-      // Show options if any
       if (data.options && data.options.length) {
         const optsHtml = data.options.map((opt, idx) => `<li class="${data.selectedOption === idx ? 'selected' : ''}" data-opt-index="${idx}"><div><strong>${opt.description}</strong>${opt.stake ? ` ($${opt.stake})` : ''}<div style="font-size:0.75rem;">ⓘ ${opt.justification}</div></div></li>`).join('');
         optionsContainer.innerHTML = `<ul class="options-list">${optsHtml}</ul>`;
@@ -381,7 +307,7 @@
     await updateDoc(currentDisputeRef, { selectedOption: idx });
   }
 
-  // ---------- Groq API calls with fallback ----------
+  // ----- Groq calls with fallback -----
   async function callGroq(prompt, systemMsg = 'You are a neutral dispute resolution assistant.', temp = 0.3, json = false) {
     const messages = [{ role: 'system', content: systemMsg }, { role: 'user', content: prompt }];
     const body = { model: GROQ_MODEL, messages, temperature: temp, max_tokens: 800 };
@@ -395,37 +321,31 @@
       const data = await resp.json();
       return data.choices[0].message.content;
     } catch (e) {
-      console.warn("Groq API failed, using fallback", e);
+      console.warn("Groq failed", e);
       return null;
     }
   }
 
   async function classifyDispute(text) {
-    const prompt = `Classify this dispute: "${text}". Return JSON with fields: domain (string), issues (array), recommendedPathway (string), confidence (integer 0-100), explanation (short reason).`;
+    const prompt = `Classify this dispute: "${text}". Return JSON with fields: domain, issues (array), recommendedPathway, confidence (0-100), explanation.`;
     const res = await callGroq(prompt, 'You are a dispute classifier. Output JSON.', 0.1, true);
     if (res) {
-      try { return JSON.parse(res); } catch(e) { console.warn("Invalid JSON from Groq", e); }
+      try { return JSON.parse(res); } catch(e) { console.warn("JSON parse error"); }
     }
-    // Fallback classification
-    const domains = ['consumer', 'landlord-tenant', 'employment', 'service contract'];
-    const domain = domains[Math.floor(Math.random() * domains.length)];
-    return { domain, issues: ['quality dispute', 'non-payment'], recommendedPathway: 'negotiation → mediation', confidence: 75, explanation: 'Fallback classification due to API issue.' };
+    return { domain: "general", issues: ["unknown"], recommendedPathway: "negotiation", confidence: 70, explanation: "Fallback classification." };
   }
-
   async function generateTitle(text) {
-    const res = await callGroq(`Generate a short title (max 6 words) for: "${text}"`, 'Output only the title.', 0.3);
-    return res ? res.trim() : text.slice(0, 40);
+    const res = await callGroq(`Short title (max 6 words): "${text}"`, 'Output only the title.', 0.3);
+    return res ? res.trim() : text.slice(0,40);
   }
-
   async function generateOptions(disputeText, statements) {
-    const prompt = `Based on dispute: "${disputeText}" and statements: ${JSON.stringify(statements)}, suggest 3 fair settlement options. For each include description, stake (number or null), and justification (why it's fair). Return JSON: { options: [{ description, stake, justification }] }`;
+    const prompt = `Suggest 3 fair settlement options for: "${disputeText}" (statements: ${JSON.stringify(statements)}). Return JSON: { options: [{ description, stake, justification }] }`;
     const res = await callGroq(prompt, 'You are a neutral mediator. Output JSON.', 0.4, true);
     if (res) {
       try {
-        const parsed = JSON.parse(res);
-        let opts = parsed.options;
+        let opts = JSON.parse(res).options;
         if (opts && opts.length) {
-          // Randomize order (non-determinacy)
+          // randomize order (non-determinacy)
           for (let i = opts.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [opts[i], opts[j]] = [opts[j], opts[i]];
@@ -434,40 +354,31 @@
         }
       } catch(e) {}
     }
-    // Fallback
     return [
-      { description: `Full refund of ${disputeText.includes('$') ? 'the amount' : 'the payment'}`, stake: 100, justification: 'Common in consumer disputes.' },
-      { description: 'Partial refund (50%) and return of goods', stake: 50, justification: 'Fair compromise.' },
-      { description: 'Repair/replacement instead of refund', stake: null, justification: 'Preserves relationship.' }
+      { description: "Full refund", stake: 100, justification: "Common in similar disputes." },
+      { description: "Partial refund (50%)", stake: 50, justification: "Fair compromise." },
+      { description: "Repair/replacement", stake: null, justification: "Preserves relationship." }
     ];
   }
-
   async function generateAgreement(disputeText, optionDesc) {
-    const prompt = `Write a simple non-binding settlement agreement. Dispute: ${disputeText}. Terms: ${optionDesc}. Use plain language, placeholders for names.`;
-    const res = await callGroq(prompt, 'You draft neutral agreements.', 0.3);
-    if (res) return res;
-    return `SETTLEMENT AGREEMENT (non-binding)\n\nDispute: ${disputeText}\n\nTerms: ${optionDesc}\n\nThis agreement is entered into voluntarily.\n\n______________________  ______________________\nParty A                Party B`;
+    const res = await callGroq(`Write a simple non-binding settlement agreement. Dispute: ${disputeText}. Terms: ${optionDesc}. Use placeholders for names.`);
+    return res || `SETTLEMENT AGREEMENT (non-binding)\n\nDispute: ${disputeText}\nTerms: ${optionDesc}\n\n______________________  ______________________\nParty A                Party B`;
   }
-
   async function generateSummary(statements) {
-    const prompt = `Summarize agreements and disagreements from these statements: ${JSON.stringify(statements)}. Return a short bullet list.`;
-    const res = await callGroq(prompt, 'Neutral summarizer.', 0.3);
-    if (res) return res;
-    return "• Both parties agree there was a transaction.\n• Disagreement on key details.\n• Both open to a compromise.";
+    const res = await callGroq(`Summarize agreements/disagreements from: ${JSON.stringify(statements)}. Return bullet list.`);
+    return res || "• Both parties agree there was a transaction.\n• Disagreement on key details.\n• Both open to a compromise.";
   }
-
-  async function botReply(userMessage, context) {
-    const prompt = `You are an impartial AI mediator. Facilitate communication, ask clarifying questions, suggest constructive approaches. Never give legal advice. Remind that all suggestions are non-binding. User said: "${userMessage}". Previous context: ${JSON.stringify(context)}. Keep reply concise.`;
+  async function botReply(userMessage, history) {
+    const prompt = `You are an impartial AI mediator. Facilitate communication, ask questions, never give legal advice. Remind suggestions are non-binding. User: "${userMessage}". Context: ${JSON.stringify(history)}. Reply concisely.`;
     const res = await callGroq(prompt, '', 0.7);
-    if (res) return res;
-    return "Thank you for sharing that. Remember, any suggestions I make are non-binding. What would feel fair to you?";
+    return res || "Thank you for sharing that. Remember, any suggestions I make are non-binding. What would feel fair to you?";
   }
 
-  // ---------- Event Handlers ----------
+  // ----- Event handlers -----
   newDisputeBtn.addEventListener('click', async () => {
     const id = crypto.randomUUID();
     const disputeData = {
-      createdAt: getServerTimestamp(),
+      createdAt: serverTimestamp(),
       status: 'intake',
       partyA: { sessionId, consented: false, storageConsent: false, trainingConsent: false },
       partyB: { sessionId: null, consented: false },
@@ -487,8 +398,7 @@
   document.getElementById('consentBtn').addEventListener('click', async () => {
     const storageConsent = document.getElementById('consentStorage').checked;
     if (!storageConsent) { alert('Storage consent required.'); return; }
-    const dispute = await getDoc(currentDisputeRef);
-    if (!dispute.exists()) return;
+    if (!currentDisputeRef) { alert('No dispute loaded.'); return; }
     const updates = currentParty === 'A'
       ? { 'partyA.consented': true, 'partyA.storageConsent': true, 'partyA.trainingConsent': document.getElementById('consentTraining').checked }
       : { 'partyB.consented': true, 'partyB.sessionId': sessionId };
@@ -505,12 +415,8 @@
     await updateDoc(currentDisputeRef, { disputeText: text, classification, title });
   });
 
-  proceedBtn.addEventListener('click', () => {});
-
-  copyLinkBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(shareLinkDiv.textContent);
-    alert('Link copied');
-  });
+  proceedBtn.addEventListener('click', () => {}); // UI updates automatically
+  copyLinkBtn.addEventListener('click', () => { navigator.clipboard.writeText(shareLinkDiv.textContent); alert('Link copied'); });
 
   getOptionsBtn.addEventListener('click', async () => {
     const snap = await getDoc(currentDisputeRef);
@@ -522,7 +428,7 @@
   generateAgreementBtn.addEventListener('click', async () => {
     const snap = await getDoc(currentDisputeRef);
     const data = snap.data();
-    if (!data.options || data.selectedOption === null) { alert('Please generate and select an option first.'); return; }
+    if (!data.options || data.selectedOption === null) { alert('Generate and select an option first.'); return; }
     const agreement = await generateAgreement(data.disputeText, data.options[data.selectedOption].description);
     await updateDoc(currentDisputeRef, { settlementText: agreement });
   });
@@ -535,7 +441,7 @@
   });
 
   deleteDataBtn.addEventListener('click', async () => {
-    if (confirm('Delete all data for this dispute? This cannot be undone.')) {
+    if (confirm('Delete all data for this dispute? Cannot be undone.')) {
       await updateDoc(currentDisputeRef, { deleted: true, disputeText: deleteField(), statements: deleteField(), options: deleteField(), settlementText: deleteField() });
       window.location.href = window.location.pathname;
     }
@@ -543,7 +449,7 @@
 
   humanEscalateBtn.addEventListener('click', async () => {
     await updateDoc(currentDisputeRef, { humanEscalation: true });
-    addMessageToChat('system', 'Human mediator has been requested. The other party will be notified.');
+    addMessageToChat('system', 'Human mediator has been requested.');
     await addMessageToFirestore('system', 'A party requested human mediator intervention.', false);
   });
 
@@ -570,16 +476,9 @@
     const statements = snap.data().statements || [];
     statements.push({ party: currentParty, text, timestamp: new Date().toISOString() });
     await updateDoc(currentDisputeRef, { statements });
-
-    // Get last few messages for context
-    let history = [];
-    if (firebaseAvailable) {
-      const msgsSnap = await getDocs(query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20)));
-      history = msgsSnap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
-    } else {
-      const msgs = window.localStorageDB.messages[`disputes/${currentDisputeId}/messages`] || [];
-      history = msgs.map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }));
-    }
+    // Get conversation history for bot context
+    const msgsSnap = await getDocs(query(collection(db, 'disputes', currentDisputeId, 'messages'), orderBy('timestamp', 'asc'), limit(20)));
+    const history = msgsSnap.docs.map(d => ({ role: d.data().sender === 'user' ? 'user' : 'assistant', content: d.data().text }));
     const reply = await botReply(text, history);
     addMessageToChat('bot', reply);
     await addMessageToFirestore('bot', reply, false);
@@ -591,13 +490,11 @@
   attachButton.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', async (e) => {
     if (!currentDisputeRef) return;
-    const files = Array.from(e.target.files);
-    for (const file of files) {
+    for (const file of e.target.files) {
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const base64 = ev.target.result.split(',')[1];
-        const attachment = { name: file.name, type: file.type, content: base64, size: file.size };
-        await updateDoc(currentDisputeRef, { attachments: arrayUnion(attachment) });
+        await updateDoc(currentDisputeRef, { attachments: arrayUnion({ name: file.name, type: file.type, content: base64, size: file.size }) });
         addMessageToChat('user', `📎 Attached: ${file.name}`, true);
         await addMessageToFirestore('user', `📎 Attached: ${file.name}`, true);
       };
@@ -611,11 +508,8 @@
     const params = new URLSearchParams(window.location.search);
     const disputeId = params.get('dispute');
     const party = params.get('party');
-    if (disputeId) {
-      await loadDispute(disputeId, party || 'B');
-    } else {
-      await loadDisputeList();
-    }
+    if (disputeId) await loadDispute(disputeId, party || 'B');
+    else await loadDisputeList();
   });
 </script>
 </body>
