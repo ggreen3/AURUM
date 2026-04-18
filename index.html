@@ -129,7 +129,7 @@
     messagingSenderId: "728479269779",
     appId: "1:728479269779:web:27b9cdef6c9458e5ff1e66"
   };
-  const GROQ_API_KEY = "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";
+  const GROQ_API_KEY = "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";
   const GROQ_MODEL = "llama-3.3-70b-versatile";
 
   let db, firebaseAvailable = false;
@@ -137,7 +137,7 @@
     const app = initializeApp(FIREBASE_CONFIG);
     db = getFirestore(app);
     firebaseAvailable = true;
-    document.getElementById('firebaseStatus').innerHTML = '✅ Firebase connected';
+    document.getElementById('firebaseStatus').innerHTML = '✅  connected';
     document.getElementById('firebaseStatus').className = 'status-badge success';
     // test write
     const testRef = doc(db, 'test', 'test');
